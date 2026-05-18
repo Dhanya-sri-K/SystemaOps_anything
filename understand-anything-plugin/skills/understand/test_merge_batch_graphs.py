@@ -870,5 +870,76 @@ class MergeIntegrationTests(unittest.TestCase):
         self.assertIn("tested", prod_node["tags"])
 
 
+class NormalizeDirectionTests(unittest.TestCase):
+    """`direction` canonicalization mirrors the dashboard schema validator."""
+
+    def test_missing_defaults_to_forward(self) -> None:
+        self.assertEqual(mbg.normalize_direction(None), "forward")
+        self.assertEqual(mbg.normalize_direction(""), "forward")
+
+    def test_valid_values_pass_through(self) -> None:
+        for value in ("forward", "backward", "bidirectional"):
+            with self.subTest(value=value):
+                self.assertEqual(mbg.normalize_direction(value), value)
+
+    def test_case_is_normalized(self) -> None:
+        self.assertEqual(mbg.normalize_direction("Forward"), "forward")
+        self.assertEqual(mbg.normalize_direction("BIDIRECTIONAL"), "bidirectional")
+
+    def test_aliases_are_mapped(self) -> None:
+        self.assertEqual(mbg.normalize_direction("both"), "bidirectional")
+        self.assertEqual(mbg.normalize_direction("Mutual"), "bidirectional")
+
+    def test_unknown_values_fall_back_to_forward(self) -> None:
+        self.assertEqual(mbg.normalize_direction("sideways"), "forward")
+        self.assertEqual(mbg.normalize_direction(42), "forward")
+
+
+class MergeEdgeDirectionTests(unittest.TestCase):
+    """End-to-end: merge_and_normalize persists a canonical `direction`."""
+
+    def _two_node_batch(self, edge: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "nodes": [_file_node("src/a.ts"), _file_node("src/b.ts")],
+            "edges": [edge],
+        }
+
+    def test_missing_direction_is_persisted_as_forward(self) -> None:
+        # Reproduces issue #140: edges without a `direction` field still
+        # reach the final graph and trigger dashboard auto-corrections.
+        batch = self._two_node_batch({
+            "source": "file:src/a.ts",
+            "target": "file:src/b.ts",
+            "type": "depends_on",
+            "weight": 0.5,
+        })
+
+        assembled, _report = mbg.merge_and_normalize([batch])
+
+        edges = [e for e in assembled["edges"] if e["type"] == "depends_on"]
+        self.assertEqual(len(edges), 1)
+        self.assertEqual(edges[0]["direction"], "forward")
+
+    def test_alias_is_canonicalized_before_dedup(self) -> None:
+        # `"both"` and `"bidirectional"` describe the same relationship; without
+        # canonicalization they get separate dedup keys and leak duplicates.
+        batch = {
+            "nodes": [_file_node("src/a.ts"), _file_node("src/b.ts")],
+            "edges": [
+                {"source": "file:src/a.ts", "target": "file:src/b.ts",
+                 "type": "depends_on", "direction": "both", "weight": 0.3},
+                {"source": "file:src/a.ts", "target": "file:src/b.ts",
+                 "type": "depends_on", "direction": "bidirectional", "weight": 0.9},
+            ],
+        }
+
+        assembled, _report = mbg.merge_and_normalize([batch])
+
+        edges = [e for e in assembled["edges"] if e["type"] == "depends_on"]
+        self.assertEqual(len(edges), 1)
+        self.assertEqual(edges[0]["direction"], "bidirectional")
+        self.assertEqual(edges[0]["weight"], 0.9)
+
+
 if __name__ == "__main__":
     unittest.main()

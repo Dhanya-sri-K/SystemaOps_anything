@@ -106,6 +106,21 @@ _TEST_NAME_PATTERNS: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
 }
 
 
+# Mirrors packages/core/src/schema.ts so the dashboard validator has nothing
+# left to auto-correct for the `direction` field on merged graphs.
+_DIRECTION_ALIASES: dict[str, str] = {"both": "bidirectional", "mutual": "bidirectional"}
+_VALID_DIRECTIONS: frozenset[str] = frozenset({"forward", "backward", "bidirectional"})
+
+
+def normalize_direction(value: Any) -> str:
+    """Canonicalize an edge `direction` value to one of the schema enum members."""
+    candidate = value.lower() if isinstance(value, str) else ""
+    candidate = _DIRECTION_ALIASES.get(candidate, candidate)
+    if candidate not in _VALID_DIRECTIONS:
+        return "forward"
+    return candidate
+
+
 def _num(v: Any) -> float:
     """Coerce a value to float for safe comparison (handles string weights)."""
     try:
@@ -803,7 +818,8 @@ def merge_and_normalize(batches: list[dict[str, Any]]) -> tuple[dict[str, Any], 
         src = edge.get("source", "")
         tgt = edge.get("target", "")
         etype = edge.get("type", "")
-        direction = edge.get("direction", "forward")
+        direction = normalize_direction(edge.get("direction"))
+        edge["direction"] = direction
 
         if src not in node_ids or tgt not in node_ids:
             missing = []
