@@ -276,7 +276,7 @@ export const zh = {
     steps: [
       {
         title: "欢迎进入知识图",
-        body: "你看到的圆点和连线是 Understand-Anything 把这份项目（代码 / wiki）抽出来的实体和关系。每个节点是一个文件、概念、实体或断言。",
+        body: "你看到的圆点和连线是 Understand-Anything 把这份项目抽出来的实体和关系。节点可以是代码里的文件、类、函数，也可以是知识 wiki 里的概念、实体或断言。",
         hint: "5 步以内带你过完核心操作",
       },
       {

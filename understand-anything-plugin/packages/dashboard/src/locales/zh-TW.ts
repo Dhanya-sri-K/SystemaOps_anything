@@ -276,7 +276,7 @@ export const zhTW = {
     steps: [
       {
         title: "歡迎進入知識圖",
-        body: "你看到的圓點和連線是 Understand-Anything 把這份專案（程式碼 / wiki）抽出來的實體和關係。每個節點是一個檔案、概念、實體或斷言。",
+        body: "你看到的圓點和連線是 Understand-Anything 把這份專案抽出來的實體和關係。節點可以是程式碼裡的檔案、類別、函式，也可以是知識 wiki 裡的概念、實體或斷言。",
         hint: "5 步以內帶你過完核心操作",
       },
       {

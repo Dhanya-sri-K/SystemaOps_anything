@@ -276,7 +276,7 @@ export const en = {
     steps: [
       {
         title: "Welcome to the knowledge graph",
-        body: "The dots and lines you see are entities and relations that Understand-Anything extracted from this project (code / wiki). Each node is a file, concept, entity, or claim.",
+        body: "The dots and lines you see are entities and relations Understand-Anything extracted from this project. A node can be a file, class, or function from the code — or a concept, entity, or claim from a knowledge wiki.",
         hint: "Five steps to cover the core operations",
       },
       {
