@@ -32,6 +32,7 @@ export default function SearchBar() {
   const { t } = useI18n();
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -85,8 +86,8 @@ export default function SearchBar() {
   const showDropdown = dropdownOpen && searchQuery.trim() && topResults.length > 0;
 
   return (
-    <div ref={containerRef} className="relative z-30">
-      <div className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-surface border-b border-border-subtle">
+    <div ref={containerRef} className="relative z-30 w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl mx-auto">
+      <div className="flex items-center gap-2 px-3 py-1 bg-surface/50 border border-border-subtle/80 rounded-lg focus-within:border-accent focus-within:bg-surface focus-within:shadow-[0_0_10px_rgba(0,245,255,0.15)] transition-all w-full">
         <svg
           className="w-4 h-4 text-text-muted shrink-0"
           fill="none"
@@ -105,17 +106,31 @@ export default function SearchBar() {
           type="text"
           value={searchQuery}
           onChange={handleInputChange}
-          onFocus={() => setDropdownOpen(true)}
+          onFocus={() => {
+            setDropdownOpen(true);
+            setIsFocused(true);
+          }}
+          onBlur={() => {
+            setIsFocused(false);
+          }}
           placeholder={t.search.placeholder}
           data-testid="search-input"
-          className="flex-1 min-w-0 bg-elevated text-text-primary text-sm rounded-lg px-3 py-1.5 border border-border-subtle focus:outline-none focus:border-accent/50 placeholder-text-muted"
+          className="flex-1 min-w-0 bg-transparent text-text-primary text-xs py-1.5 focus:outline-none placeholder-text-muted"
         />
-        <div className="flex items-center gap-1 bg-elevated rounded-lg p-0.5 shrink-0">
+        
+        {/* Keyboard shortcut slash indicator when not active/focused */}
+        {!isFocused && !searchQuery.trim() && (
+          <div className="hidden sm:flex items-center gap-1 bg-elevated/80 border border-border-subtle/40 px-1.5 py-0.5 rounded text-[9px] text-accent/80 font-mono tracking-wider shrink-0 pointer-events-none select-none">
+            <span>/</span>
+          </div>
+        )}
+
+        <div className="flex items-center gap-0.5 bg-root/60 rounded-md p-0.5 border border-border-subtle/40 shrink-0">
           <button
             onClick={() => setSearchMode("fuzzy")}
-            className={`text-[10px] px-1.5 py-0.5 rounded transition-colors ${
+            className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded transition-colors ${
               searchMode === "fuzzy"
-                ? "bg-accent/20 text-accent"
+                ? "bg-accent/15 text-accent shadow-sm"
                 : "text-text-muted hover:text-text-secondary"
             }`}
           >
@@ -123,9 +138,9 @@ export default function SearchBar() {
           </button>
           <button
             onClick={() => setSearchMode("semantic")}
-            className={`text-[10px] px-1.5 py-0.5 rounded transition-colors ${
+            className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded transition-colors ${
               searchMode === "semantic"
-                ? "bg-accent/20 text-accent"
+                ? "bg-accent/15 text-accent shadow-sm"
                 : "text-text-muted hover:text-text-secondary"
             }`}
           >
@@ -133,16 +148,16 @@ export default function SearchBar() {
           </button>
         </div>
         {searchQuery.trim() && (
-          <span className="hidden sm:inline text-xs text-text-muted shrink-0">
-            {searchResults.length} {t.search.result}{searchResults.length !== 1 ? "s" : ""}{" "}
-            <span className="text-text-muted">({searchMode})</span>
+          <span className="hidden md:inline text-[10px] text-text-muted shrink-0 bg-elevated px-1.5 py-0.5 rounded border border-border-subtle/30">
+            {searchResults.length}
           </span>
         )}
       </div>
 
       {/* Dropdown results */}
       {showDropdown && (
-        <div className="absolute left-4 right-4 top-full mt-0.5 glass rounded-lg shadow-xl overflow-hidden">
+        <div className="absolute left-0 right-0 top-full mt-1.5 glass rounded-lg shadow-xl overflow-hidden border border-border-medium z-50 animate-fade-slide-in">
+
           {topResults.map((result) => {
             const node = nodeMap.get(result.nodeId);
             if (!node) return null;

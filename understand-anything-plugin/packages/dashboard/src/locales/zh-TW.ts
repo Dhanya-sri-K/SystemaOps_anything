@@ -17,7 +17,7 @@ export const zhTW = {
     truncated: "(已截斷)",
     preview: "預覽",
     doubleClickToOpen: "雙擊開啟",
-    appName: "Understand Anything",
+    appName: "SystemaOps",
     pressKeyboard: "按 ? 查看鍵盤快捷鍵",
     path: "路徑",
     theme: "主題",
@@ -268,7 +268,7 @@ export const zhTW = {
     title: "尋找節點間路徑 (P)",
   },
   onboarding: {
-    header: "UNDERSTAND-ANYTHING · 入門",
+    header: "SYSTEMAOPS · 入門",
     skipForever: "不再顯示",
     prev: "上一步",
     next: "下一步",
@@ -276,7 +276,7 @@ export const zhTW = {
     steps: [
       {
         title: "歡迎進入知識圖",
-        body: "你看到的圓點和連線是 Understand-Anything 把這份專案抽出來的實體和關係。節點可以是程式碼裡的檔案、類別、函式，也可以是知識 wiki 裡的概念、實體或斷言。",
+        body: "你看到的圓點和連線是 SystemaOps 把這份專案抽出來的實體和關係。節點可以是程式碼裡的檔案、類別、函式，也可以是知識 wiki 裡的概念、實體或斷言。",
         hint: "5 步以內帶你過完核心操作",
       },
       {

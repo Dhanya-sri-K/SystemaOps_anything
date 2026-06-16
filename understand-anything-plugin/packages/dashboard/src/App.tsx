@@ -25,6 +25,7 @@ import { ThemePicker } from "./components/ThemePicker.tsx";
 import type { ThemeConfig } from "./themes/index.ts";
 import { I18nProvider, useI18n } from "./contexts/I18nContext.tsx";
 import ProjectChatbot from "./components/ProjectChatbot";
+import TourPopup from "./components/TourPopup";
 
 
 // Lazy-load heavy / optional components so they ship in separate chunks.
@@ -37,9 +38,9 @@ const KeyboardShortcutsHelp = lazy(
 const OnboardingOverlay = lazy(() => import("./components/OnboardingOverlay"));
 
 const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === "true";
-const SESSION_TOKEN_KEY = "understand-anything-token";
-const ONBOARDING_DISMISSED_KEY = "ua-onboarding-dismissed-v1";
-type SidebarTab = "info" | "files";
+const SESSION_TOKEN_KEY = "systemaops-token";
+const ONBOARDING_DISMISSED_KEY = "so-onboarding-dismissed-v1";
+type SidebarTab = "files" | "chat" | "filters";
 
 function shouldShowOnboarding(): boolean {
   if (typeof window === "undefined") return false;
@@ -269,6 +270,7 @@ function DashboardContent({
 }) {
   const graph = useDashboardStore((s) => s.graph);
   const selectedNodeId = useDashboardStore((s) => s.selectedNodeId);
+  const selectNode = useDashboardStore((s) => s.selectNode);
   const tourActive = useDashboardStore((s) => s.tourActive);
   const persona = useDashboardStore((s) => s.persona);
   const codeViewerOpen = useDashboardStore((s) => s.codeViewerOpen);
@@ -283,8 +285,12 @@ function DashboardContent({
   const setDetailLevel = useDashboardStore((s) => s.setDetailLevel);
   const showFunctionsInClassView = useDashboardStore((s) => s.showFunctionsInClassView);
   const toggleShowFunctionsInClassView = useDashboardStore((s) => s.toggleShowFunctionsInClassView);
+  
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
-  const [sidebarTab, setSidebarTab] = useState<SidebarTab>("info");
+  const [sidebarTab, setSidebarTab] = useState<SidebarTab>("files");
+  const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
+  const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
+
   const [showOnboarding, setShowOnboarding] = useState(shouldShowOnboarding);
   const dismissOnboarding = useCallback((remember: boolean) => {
     if (remember && typeof window !== "undefined") {
@@ -292,6 +298,7 @@ function DashboardContent({
     }
     setShowOnboarding(false);
   }, []);
+  
   const viewMode = useDashboardStore((s) => s.viewMode);
   const setViewMode = useDashboardStore((s) => s.setViewMode);
   const isKnowledgeGraph = useDashboardStore((s) => s.isKnowledgeGraph);
@@ -304,8 +311,11 @@ function DashboardContent({
     [graphIssues, layoutIssues],
   );
 
+  // Auto-expand Right Details Sidebar when a node is selected
   useEffect(() => {
-    if (selectedNodeId) setSidebarTab("info");
+    if (selectedNodeId) {
+      setRightSidebarCollapsed(false);
+    }
   }, [selectedNodeId]);
 
   // Define keyboard shortcuts
@@ -324,7 +334,6 @@ function DashboardContent({
         key: "Escape",
         description: t.keyboardShortcuts.escapeDesc,
         action: () => {
-          // Read from store at invocation time to avoid stale closures
           const state = useDashboardStore.getState();
           if (state.pathFinderOpen) {
             state.togglePathFinder();
@@ -426,42 +435,275 @@ function DashboardContent({
   // Register keyboard shortcuts
   useKeyboardShortcuts(shortcuts);
 
-  // Determine sidebar content
-  // NodeInfo always takes priority when a node is selected.
-  // Learn mode adds LearnPanel below it; otherwise ProjectOverview shows when idle.
+  const handleTabToggle = (tab: SidebarTab) => {
+    if (sidebarTab === tab) {
+      setLeftSidebarCollapsed((prev) => !prev);
+    } else {
+      setSidebarTab(tab);
+      setLeftSidebarCollapsed(false);
+    }
+  };
+
   const isLearnMode = tourActive || persona === "junior";
-  const infoSidebarContent = (
-    <>
-      {selectedNodeId && <NodeInfo />}
-      {isLearnMode && (
-        <Suspense fallback={null}>
-          <LearnPanel />
-        </Suspense>
-      )}
-      {!selectedNodeId && !isLearnMode && <ProjectOverview />}
-    </>
+  const rightSidebarContent = (
+    <div className="h-full flex flex-col min-h-0 bg-surface">
+      <div className="flex items-center justify-between p-4 border-b border-border-subtle bg-surface/80 shrink-0">
+        <h3 className="font-heading text-sm text-text-primary tracking-wider uppercase flex items-center gap-2">
+          {selectedNodeId ? (
+            <>
+              <span className="neon-dot-purple shrink-0" />
+              <span>{t.sidebar.info}</span>
+            </>
+          ) : tourActive ? (
+            <>
+              <span className="neon-dot-purple shrink-0 animate-pulse" />
+              <span>Interactive Tour</span>
+            </>
+          ) : (
+            <>
+              <span className="neon-dot shrink-0" />
+              <span>Project Overview</span>
+            </>
+          )}
+        </h3>
+        <button
+          onClick={() => {
+            if (tourActive) {
+              useDashboardStore.getState().stopTour();
+            } else if (selectedNodeId) {
+              selectNode(null);
+            } else {
+              setRightSidebarCollapsed(true);
+            }
+          }}
+          className="text-text-muted hover:text-accent p-1 rounded hover:bg-elevated/40 transition-colors"
+          title="Close / Stop Tour"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div className="flex-1 overflow-auto min-h-0">
+        {selectedNodeId && <NodeInfo />}
+        {isLearnMode && !tourActive && (
+          <Suspense fallback={null}>
+            <div className={selectedNodeId ? "border-t border-border-subtle/30 mt-4 pt-4" : "h-full"}>
+              <LearnPanel />
+            </div>
+          </Suspense>
+        )}
+        {!selectedNodeId && (!isLearnMode || tourActive) && <ProjectOverview />}
+      </div>
+    </div>
   );
 
-  const sidebarContent = (
-    <div className="h-full flex flex-col min-h-0">
-      <div className="flex items-center gap-1 p-2 border-b border-border-subtle bg-surface shrink-0">
-        {(["info", "files"] as const).map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            onClick={() => setSidebarTab(tab)}
-            className={`flex-1 px-3 py-1.5 rounded-md text-xs font-semibold uppercase tracking-wider transition-colors ${
-              sidebarTab === tab
-                ? "bg-accent/15 text-accent"
-                : "text-text-muted hover:text-text-primary hover:bg-elevated"
-            }`}
-          >
-            {tab === "info" ? t.sidebar.info : t.sidebar.files}
-          </button>
-        ))}
+  const leftSidebarContent = (
+    <div className="h-full flex flex-col min-h-0 bg-surface">
+      {/* Tab panel header title */}
+      <div className="px-4 py-3 border-b border-border-subtle bg-surface/80 shrink-0 flex items-center justify-between">
+        <h3 className="font-heading text-xs text-text-primary tracking-widest uppercase font-bold">
+          {sidebarTab === "files" ? t.sidebar.files : sidebarTab === "chat" ? "AI Companion" : "System Settings"}
+        </h3>
+        <button
+          onClick={() => setLeftSidebarCollapsed(true)}
+          className="text-text-muted hover:text-accent p-1 rounded hover:bg-elevated/40 transition-colors md:hidden"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
       </div>
-      <div className="flex-1 min-h-0 overflow-auto">
-        {sidebarTab === "files" ? <FileExplorer /> : infoSidebarContent}
+
+      <div className="flex-1 min-h-0 overflow-hidden">
+        {sidebarTab === "files" ? (
+          <div className="h-full overflow-auto p-2"><FileExplorer /></div>
+        ) : sidebarTab === "chat" ? (
+          <ProjectChatbot embedded={true} />
+        ) : (
+          /* Settings / Filters tab panel contents (Relocated options) */
+          <div className="h-full overflow-auto p-4 space-y-6">
+            
+            {/* View Mode Selector - Segmented Sliding Control */}
+            {graph && !isKnowledgeGraph && domainGraph && (
+              <div>
+                <h4 className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-2 font-mono">
+                  Visualization Mode
+                </h4>
+                <div className="cyber-segmented-control relative flex bg-elevated/40 border border-border-subtle/50 rounded-lg p-0.5 w-full">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("domain")}
+                    title={t.drawer.domain}
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all relative z-10 ${
+                      viewMode === "domain"
+                        ? "text-accent font-bold"
+                        : "text-text-muted hover:text-text-secondary"
+                    }`}
+                  >
+                    {viewMode === "domain" && (
+                      <span className="absolute inset-0 bg-accent/15 border border-accent/20 rounded-md z-[-1]" />
+                    )}
+                    {t.drawer.domain}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("structural")}
+                    title={t.drawer.structural}
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all relative z-10 ${
+                      viewMode === "structural"
+                        ? "text-accent font-bold"
+                        : "text-text-muted hover:text-text-secondary"
+                    }`}
+                  >
+                    {viewMode === "structural" && (
+                      <span className="absolute inset-0 bg-accent/15 border border-accent/20 rounded-md z-[-1]" />
+                    )}
+                    {t.drawer.structural}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Detail Level Selector - Segmented Sliding Control */}
+            {!isKnowledgeGraph && viewMode !== "domain" && (
+              <div className="space-y-3">
+                <div>
+                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-2 font-mono">
+                    Detail Level
+                  </h4>
+                  <div className="cyber-segmented-control relative flex bg-elevated/40 border border-border-subtle/50 rounded-lg p-0.5 w-full">
+                    <button
+                      type="button"
+                      onClick={() => setDetailLevel("file")}
+                      title={t.detailLevel.filesTitle}
+                      className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all relative z-10 ${
+                        detailLevel === "file"
+                          ? "text-accent font-bold"
+                          : "text-text-muted hover:text-text-secondary"
+                      }`}
+                    >
+                      {detailLevel === "file" && (
+                        <span className="absolute inset-0 bg-accent/15 border border-accent/20 rounded-md z-[-1]" />
+                      )}
+                      {t.detailLevel.files}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDetailLevel("class")}
+                      title={t.detailLevel.classesTitle}
+                      className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all relative z-10 ${
+                        detailLevel === "class"
+                          ? "text-accent font-bold"
+                          : "text-text-muted hover:text-text-secondary"
+                      }`}
+                    >
+                      {detailLevel === "class" && (
+                        <span className="absolute inset-0 bg-accent/15 border border-accent/20 rounded-md z-[-1]" />
+                      )}
+                      {t.detailLevel.classes}
+                    </button>
+                  </div>
+                </div>
+
+                {detailLevel === "class" && (
+                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-elevated/25 border border-border-subtle/30">
+                    <span className="text-xs text-text-secondary font-medium">Show Functions</span>
+                    <label className="cyber-switch shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={showFunctionsInClassView}
+                        onChange={toggleShowFunctionsInClassView}
+                      />
+                      <span className="cyber-switch-slider"></span>
+                    </label>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Diff Analysis Mode switch toggle */}
+            <div className="p-3 rounded-lg bg-elevated/15 border border-border-subtle/40">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted font-mono">
+                  Diff Analysis
+                </span>
+                <label className="cyber-switch shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={useDashboardStore((s) => s.diffMode)}
+                    onChange={() => useDashboardStore.getState().toggleDiffMode()}
+                    disabled={useDashboardStore((s) => s.changedNodeIds).size === 0}
+                  />
+                  <span className="cyber-switch-slider"></span>
+                </label>
+              </div>
+              <p className="text-[10px] text-text-muted leading-normal mb-2.5">
+                Highlight file commits & downstream impacts.
+              </p>
+              <div className="border-t border-border-subtle/20 pt-2">
+                <DiffToggle />
+              </div>
+            </div>
+
+            {/* Category Filter panel grid */}
+            <div>
+              <h4 className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-2.5 font-mono">
+                System Component filters
+              </h4>
+              <div className="grid grid-cols-2 gap-2">
+                {(isKnowledgeGraph ? [
+                  { key: "knowledge" as const, label: t.nodeTypeLabels.all, color: "var(--color-node-article)" },
+                ] : [
+                  { key: "code" as const, label: t.nodeTypeLabels.code, color: "var(--color-node-file)" },
+                  { key: "config" as const, label: t.nodeTypeLabels.config, color: "var(--color-node-config)" },
+                  { key: "docs" as const, label: t.nodeTypeLabels.docs, color: "var(--color-node-document)" },
+                  { key: "infra" as const, label: t.nodeTypeLabels.infra, color: "var(--color-node-service)" },
+                  { key: "data" as const, label: t.nodeTypeLabels.data, color: "var(--color-node-table)" },
+                  { key: "domain" as const, label: t.nodeTypeLabels.domain, color: "var(--color-node-concept)" },
+                  { key: "knowledge" as const, label: t.nodeTypeLabels.knowledge, color: "var(--color-node-article)" },
+                ]).map((cat) => {
+                  const isActive = nodeTypeFilters[cat.key] !== false;
+                  return (
+                    <button
+                      key={cat.key}
+                      type="button"
+                      onClick={() => toggleNodeTypeFilter(cat.key)}
+                      className={`flex items-center gap-1.5 p-2 rounded-lg border text-left text-[11px] transition-all truncate ${
+                        isActive
+                          ? "border-accent/40 bg-accent/5 text-text-primary shadow-sm hover:border-accent"
+                          : "border-transparent bg-transparent text-text-muted/40 line-through hover:text-text-muted"
+                      }`}
+                      title={`${isActive ? "Hide" : "Show"} ${cat.label} nodes`}
+                    >
+                      <span
+                        className="w-2 h-2 rounded-full shrink-0"
+                        style={{
+                          backgroundColor: cat.color,
+                          boxShadow: isActive ? `0 0 8px ${cat.color}` : 'none',
+                          opacity: isActive ? 1 : 0.3,
+                        }}
+                      />
+                      <span className="truncate flex-1">{cat.label}</span>
+                      {isActive && <span className="neon-dot shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Layer Depth Legend block */}
+            <div className="border-t border-border-subtle/30 pt-4">
+              <h4 className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-2 font-mono">
+                Layer Hierarchy
+              </h4>
+              <div className="overflow-x-auto scrollbar-hide py-1">
+                <LayerLegend />
+              </div>
+            </div>
+
+          </div>
+        )}
       </div>
     </div>
   );
@@ -480,195 +722,86 @@ function DashboardContent({
   }
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-root text-text-primary noise-overlay">
-      {/* Header */}
-      <header className="flex items-center px-3 sm:px-5 py-3 bg-surface border-b border-border-subtle shrink-0 gap-2 sm:gap-4">
-        {/* Left — fixed */}
-        <div className="flex items-center gap-3 sm:gap-5 shrink-0 min-w-0">
-          <h1 className="font-heading text-base sm:text-lg text-text-primary tracking-wide truncate max-w-[160px] sm:max-w-[220px] lg:max-w-none">
-            {graph?.project.name ?? t.common.appName}
-          </h1>
-          <div className="w-px h-5 bg-border-subtle hidden sm:block" />
-          <PersonaSelector />
-          {graph && !isKnowledgeGraph && domainGraph && (
-            <>
-              <div className="w-px h-5 bg-border-subtle" />
-              <div className="flex items-center bg-elevated rounded-lg p-0.5">
-                <button
-                  type="button"
-                  onClick={() => setViewMode("domain")}
-                  title={t.drawer.domain}
-                  className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                    viewMode === "domain"
-                      ? "bg-accent/20 text-accent"
-                      : "text-text-muted hover:text-text-secondary"
-                  }`}
-                >
-                  {t.drawer.domain}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode("structural")}
-                  title={t.drawer.structural}
-                  className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                    viewMode === "structural"
-                      ? "bg-accent/20 text-accent"
-                      : "text-text-muted hover:text-text-secondary"
-                  }`}
-                >
-                  {t.drawer.structural}
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Middle — scrollable legends */}
-        <div className="flex-1 min-w-0 overflow-x-auto scrollbar-hide">
-          <div className="flex items-center gap-4 w-max">
-            <DiffToggle />
-            {/* Detail level: file view (architecture) / class view (code structure) */}
-            {!isKnowledgeGraph && viewMode !== "domain" && (
-              <>
-                <div className="w-px h-5 bg-border-subtle" />
-                <div className="flex items-center bg-elevated rounded-lg p-0.5">
-                  <button
-                    type="button"
-                    onClick={() => setDetailLevel("file")}
-                    title={t.detailLevel.filesTitle}
-                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                      detailLevel === "file"
-                        ? "bg-accent/20 text-accent"
-                        : "text-text-muted hover:text-text-secondary"
-                    }`}
-                  >
-                    {t.detailLevel.files}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDetailLevel("class")}
-                    title={t.detailLevel.classesTitle}
-                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                      detailLevel === "class"
-                        ? "bg-accent/20 text-accent"
-                        : "text-text-muted hover:text-text-secondary"
-                    }`}
-                  >
-                    {t.detailLevel.classes}
-                  </button>
-                </div>
-                {detailLevel === "class" && (
-                  <button
-                    type="button"
-                    onClick={toggleShowFunctionsInClassView}
-                    title={t.detailLevel.fnTitle}
-                    className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-1 rounded border transition-colors ${
-                      showFunctionsInClassView
-                        ? "border-amber-500/50 bg-amber-500/10 text-amber-400"
-                        : "border-border-medium bg-elevated text-text-muted hover:text-text-secondary"
-                    }`}
-                  >
-                    {t.detailLevel.fn}
-                  </button>
-                )}
-              </>
-            )}
-            <div className="flex items-center gap-1">
-              {(isKnowledgeGraph ? [
-                { key: "knowledge" as const, label: t.nodeTypeLabels.all, color: "var(--color-node-article)" },
-              ] : [
-                { key: "code" as const, label: t.nodeTypeLabels.code, color: "var(--color-node-file)" },
-                { key: "config" as const, label: t.nodeTypeLabels.config, color: "var(--color-node-config)" },
-                { key: "docs" as const, label: t.nodeTypeLabels.docs, color: "var(--color-node-document)" },
-                { key: "infra" as const, label: t.nodeTypeLabels.infra, color: "var(--color-node-service)" },
-                { key: "data" as const, label: t.nodeTypeLabels.data, color: "var(--color-node-table)" },
-                { key: "domain" as const, label: t.nodeTypeLabels.domain, color: "var(--color-node-concept)" },
-                { key: "knowledge" as const, label: t.nodeTypeLabels.knowledge, color: "var(--color-node-article)" },
-              ]).map((cat) => (
-                <button
-                  key={cat.key}
-                  onClick={() => toggleNodeTypeFilter(cat.key)}
-                  className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-1 rounded border transition-colors flex items-center gap-1.5 whitespace-nowrap ${
-                    nodeTypeFilters[cat.key] !== false
-                      ? "border-border-medium bg-elevated text-text-secondary hover:text-text-primary"
-                      : "border-transparent bg-transparent text-text-muted/40 line-through hover:text-text-muted"
-                  }`}
-                  title={`${nodeTypeFilters[cat.key] !== false ? "Hide" : "Show"} ${cat.label} nodes`}
-                >
-                  <span
-                    className="w-2 h-2 rounded-full shrink-0"
-                    style={{
-                      backgroundColor: cat.color,
-                      opacity: nodeTypeFilters[cat.key] !== false ? 1 : 0.3,
-                    }}
-                  />
-                  {cat.label}
-                </button>
-              ))}
-            </div>
-            <LayerLegend />
+    <div className="h-screen w-screen flex flex-col bg-root text-text-primary noise-overlay cyber-grid overflow-hidden">
+      
+      {/* Sleek Minimalist Top Header */}
+      <header className="h-14 bg-surface border-b border-border-subtle shrink-0 flex items-center px-4 justify-between gap-4 z-40">
+        
+        {/* Left branding */}
+        <div className="flex items-center gap-3 shrink-0 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse shrink-0" />
+            <h1 className="font-heading text-sm font-bold text-text-primary tracking-widest uppercase font-mono truncate max-w-[120px] sm:max-w-none">
+              SYSTEMAOPS
+            </h1>
           </div>
+          <div className="w-px h-4 bg-border-subtle" />
+          <PersonaSelector />
         </div>
 
-        {/* Right — fixed actions */}
-        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+        {/* Center centered search bar */}
+        <div className="flex-1 max-w-xl">
+          <SearchBar />
+        </div>
+
+        {/* Right action control stack */}
+        <div className="flex items-center gap-3 shrink-0">
+          
           <button
             onClick={onResetProject}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-accent/10 border border-accent/20 text-accent hover:bg-accent/20 transition-colors cursor-pointer"
+            className="btn-cyber px-3 py-1.5 text-xs text-accent gap-1.5 flex items-center cursor-pointer"
             title="Upload another folder or GitHub repository"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
-            <span>Upload New</span>
+            <span className="hidden sm:inline">Upload New</span>
           </button>
-          <FilterPanel />
-          <ExportMenu />
+
           <button
             onClick={togglePathFinder}
-            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-sm bg-elevated text-text-secondary hover:text-text-primary transition-colors"
+            className={`btn-cyber px-3 py-1.5 text-xs text-text-secondary gap-1.5 flex items-center ${
+              pathFinderOpen ? "btn-cyber-active" : ""
+            }`}
             title={t.pathFinder.title}
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-              />
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
             </svg>
-            <span className="hidden md:inline">{t.common.path}</span>
+            <span className="hidden sm:inline">{t.common.path}</span>
           </button>
+
+          <FilterPanel />
+          <ExportMenu />
           <ThemePicker />
+
           <button
             onClick={() => setShowKeyboardHelp(true)}
-            className="text-text-muted hover:text-accent transition-colors"
+            className="text-text-muted hover:text-accent p-1.5 rounded hover:bg-elevated/40 transition-colors"
             title={t.keyboardShortcuts.showHelp}
           >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </button>
+
+          {/* Right sidebar expand/collapse toggle when no node selected */}
+          {!selectedNodeId && (
+            <button
+              onClick={() => setRightSidebarCollapsed((prev) => !prev)}
+              className={`p-1.5 rounded hover:bg-elevated/40 transition-colors ${
+                !rightSidebarCollapsed ? "text-accent" : "text-text-muted"
+              }`}
+              title="Toggle Project Overview panel"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+              </svg>
+            </button>
+          )}
+
         </div>
       </header>
-
-      {/* Search */}
-      <SearchBar />
 
       {/* Validation warning banner */}
       {allIssues.length > 0 && !loadError && (
@@ -682,10 +815,108 @@ function DashboardContent({
         </div>
       )}
 
-      {/* Main content: Graph + Sidebar */}
+      {/* Main Workspace Frame */}
       <div className="flex-1 flex min-h-0 relative">
-        {/* Graph area */}
-        <div className="flex-1 min-w-0 min-h-0 relative">
+        
+        {/* Vertical Left Activity Bar */}
+        <aside className="w-14 bg-surface/90 border-r border-border-subtle flex flex-col justify-between py-4 items-center shrink-0 z-30">
+          
+          {/* Top activity icons */}
+          <div className="flex flex-col items-center gap-3 w-full">
+            {/* Logo Emblem */}
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-accent-secondary flex items-center justify-center font-heading text-base font-black text-root shadow-[0_0_12px_rgba(0,245,255,0.4)] mb-4 select-none">
+              S
+            </div>
+
+            {/* Tab buttons */}
+            {(["files", "chat", "filters"] as const).map((tab) => {
+              const isActive = sidebarTab === tab && !leftSidebarCollapsed;
+              let title = "File Explorer";
+              let icon = (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                </svg>
+              );
+
+              if (tab === "chat") {
+                title = "AI Companion";
+                icon = (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                );
+              } else if (tab === "filters") {
+                title = "Filters & Legend";
+                icon = (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                  </svg>
+                );
+              }
+
+              return (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => handleTabToggle(tab)}
+                  className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all relative group ${
+                    isActive
+                      ? "bg-accent/15 text-accent shadow-sm border border-accent/25"
+                      : "text-text-muted hover:text-text-primary hover:bg-elevated/40"
+                  }`}
+                  title={title}
+                >
+                  {icon}
+                  
+                  {/* Left indicator line */}
+                  {isActive && (
+                    <span className="absolute left-0 top-2 bottom-2 w-0.5 bg-accent rounded-r-md" />
+                  )}
+                  
+                  {/* Tooltip */}
+                  <span className="absolute left-full ml-2 px-2 py-1 bg-surface border border-border-subtle rounded text-[10px] uppercase font-bold tracking-widest text-text-primary opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                    {title}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Bottom activity icons */}
+          <div className="flex flex-col items-center gap-3 w-full">
+            
+            {/* Keyboard Help Quick Launch */}
+            <button
+              onClick={() => setShowKeyboardHelp(true)}
+              className="w-10 h-10 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-elevated/40 transition-colors group relative"
+              title="Keyboard Shortcuts"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" />
+              </svg>
+              <span className="absolute left-full ml-2 px-2 py-1 bg-surface border border-border-subtle rounded text-[10px] uppercase font-bold tracking-widest text-text-primary opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                Shortcuts Help
+              </span>
+            </button>
+
+          </div>
+        </aside>
+
+        {/* Primary Collapsible Left Sidebar */}
+        <aside
+          className={`bg-surface border-r border-border-subtle overflow-hidden transition-all duration-300 z-20 shrink-0 flex flex-col ${
+            leftSidebarCollapsed ? "w-0 border-r-0" : "w-[300px] md:w-[340px]"
+          }`}
+        >
+          {!leftSidebarCollapsed && (
+            <div className="h-full flex flex-col min-h-0 animate-slide-left">
+              {leftSidebarContent}
+            </div>
+          )}
+        </aside>
+
+        {/* Graph Workspace Canvas */}
+        <div className="flex-1 min-w-0 min-h-0 relative z-10">
           {viewMode === "knowledge" ? (
             <KnowledgeGraphView />
           ) : viewMode === "domain" && domainGraph ? (
@@ -693,30 +924,41 @@ function DashboardContent({
           ) : (
             <GraphView />
           )}
-          <div className="absolute top-3 right-3 text-sm text-text-muted/60 pointer-events-none select-none">
+
+          {/* Overlay hints */}
+          <div className="absolute top-3 right-3 text-[10px] font-mono text-text-muted/65 pointer-events-none select-none bg-root/40 border border-border-subtle/25 px-2 py-1 rounded backdrop-blur-sm">
             {t.common.pressKeyboard}
           </div>
+          
+          {/* Bottom Code Viewer Slide-up overlay */}
+          {codeViewerOpen && !codeViewerExpanded && (
+            <div className="absolute bottom-0 left-0 right-0 h-[40vh] bg-surface border-t border-border-subtle animate-slide-up z-20 overflow-hidden">
+              <Suspense fallback={null}>
+                <CodeViewer accessToken={accessToken} onExpand={expandCodeViewer} />
+              </Suspense>
+            </div>
+          )}
         </div>
 
-        {/* Right sidebar — telescopes at narrower widths */}
-        <aside className="w-[260px] md:w-[300px] lg:w-[360px] shrink-0 bg-surface border-l border-border-subtle overflow-auto">
-          {sidebarContent}
+        {/* Dedicated Collapsible Right Sidebar */}
+        <aside
+          className={`bg-surface border-l border-border-subtle overflow-hidden transition-all duration-300 z-20 shrink-0 flex flex-col ${
+            rightSidebarCollapsed ? "w-0 border-l-0" : "w-[360px] md:w-[400px] lg:w-[440px]"
+          }`}
+        >
+          {!rightSidebarCollapsed && (
+            <div className="h-full flex flex-col min-h-0 animate-slide-right">
+              {rightSidebarContent}
+            </div>
+          )}
         </aside>
 
-        {/* Code viewer slide-up overlay (collapsed state) */}
-        {codeViewerOpen && !codeViewerExpanded && (
-          <div className="absolute bottom-0 left-0 right-0 h-[40vh] bg-surface border-t border-border-subtle animate-slide-up z-20 overflow-hidden">
-            <Suspense fallback={null}>
-              <CodeViewer accessToken={accessToken} onExpand={expandCodeViewer} />
-            </Suspense>
-          </div>
-        )}
       </div>
 
-      {/* Expanded code viewer modal */}
+      {/* Full Expanded code viewer modal */}
       {codeViewerOpen && codeViewerExpanded && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-sm p-4 sm:p-6"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-sm p-4"
           onMouseDown={collapseCodeViewer}
         >
           <div
@@ -744,24 +986,28 @@ function DashboardContent({
         </Suspense>
       )}
 
-      {/* Path Finder Modal — only mounted when open so its chunk is lazy-loaded on demand. */}
+      {/* Path Finder Modal */}
       {pathFinderOpen && (
         <Suspense fallback={null}>
           <PathFinderModal isOpen={pathFinderOpen} onClose={togglePathFinder} />
         </Suspense>
       )}
 
-      {/* First-visit onboarding overlay — only mounted when needed so its chunk is lazy-loaded on demand. */}
+      {/* Onboarding Overlay */}
       {showOnboarding && (
         <Suspense fallback={null}>
           <OnboardingOverlay onDismiss={dismissOnboarding} />
         </Suspense>
       )}
 
-      {/* Floating chatbot */}
-      <ProjectChatbot />
+      {/* Floating chatbot (fallback if sidebar chatbot is closed or collapsed) */}
+      {(sidebarTab !== "chat" || leftSidebarCollapsed) && <ProjectChatbot />}
+
+      {/* Floating Interactive Tour Popup */}
+      {tourActive && <TourPopup />}
     </div>
   );
 }
 
 export default App;
+

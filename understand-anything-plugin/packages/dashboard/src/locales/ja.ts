@@ -17,7 +17,7 @@ export const ja = {
     truncated: "(省略)",
     preview: "プレビュー",
     doubleClickToOpen: "ダブルクリックで開く",
-    appName: "Understand Anything",
+    appName: "SystemaOps",
     pressKeyboard: "? を押してキーボードショートカットを表示",
     path: "パス",
     theme: "テーマ",
@@ -268,7 +268,7 @@ export const ja = {
     title: "ノード間のパスを検索 (P)",
   },
   onboarding: {
-    header: "UNDERSTAND-ANYTHING · はじめに",
+    header: "SYSTEMAOPS · はじめに",
     skipForever: "次回から表示しない",
     prev: "前へ",
     next: "次へ",
@@ -276,7 +276,7 @@ export const ja = {
     steps: [
       {
         title: "知識グラフへようこそ",
-        body: "表示されているノードとエッジは、Understand-Anything がこのプロジェクトから抽出したエンティティと関係です。ノードはコード側のファイル・クラス・関数のこともあれば、知識 wiki 側の概念・エンティティ・記述のこともあります。",
+        body: "表示されているノードとエッジは、SystemaOps がこのプロジェクトから抽出したエンティティと関係です。ノードはコード側のファイル・クラス・関数のこともあれば、知識 wiki 側の概念・エンティティ・記述のこともあります。",
         hint: "5 ステップで主要な操作を確認します",
       },
       {

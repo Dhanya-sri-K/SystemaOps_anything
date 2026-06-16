@@ -82,7 +82,7 @@ export default function ExportMenu() {
       const tx = targetNode.position.x + (targetNode.width ?? 200) / 2 + offsetX;
       const ty = targetNode.position.y + (targetNode.height ?? 80) / 2 + offsetY;
 
-      svgContent += `<line x1="${sx}" y1="${sy}" x2="${tx}" y2="${ty}" stroke="rgba(212,165,116,0.3)" stroke-width="1.5"/>`;
+      svgContent += `<line x1="${sx}" y1="${sy}" x2="${tx}" y2="${ty}" stroke="rgba(0,245,255,0.3)" stroke-width="1.5"/>`;
     });
 
     nodes.forEach((node) => {
@@ -93,8 +93,8 @@ export default function ExportMenu() {
       const w = node.width ?? 200;
       const h = node.height ?? 80;
 
-      svgContent += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="#1a1a1a" stroke="rgba(212,165,116,0.2)" stroke-width="1"/>`;
-      svgContent += `<text x="${x + w / 2}" y="${y + h / 2}" fill="#d4a574" text-anchor="middle" dominant-baseline="middle" font-size="12">${escapeXml(String(node.data.label ?? node.id))}</text>`;
+      svgContent += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="#0f172a" stroke="rgba(0,245,255,0.25)" stroke-width="1"/>`;
+      svgContent += `<text x="${x + w / 2}" y="${y + h / 2}" fill="#00f5ff" text-anchor="middle" dominant-baseline="middle" font-size="12">${escapeXml(String(node.data.label ?? node.id))}</text>`;
     });
 
     svgContent += `</svg>`;

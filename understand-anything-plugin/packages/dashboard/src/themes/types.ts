@@ -1,4 +1,5 @@
 export type PresetId =
+  | "dark-techy"
   | "dark-gold"
   | "dark-ocean"
   | "dark-forest"
@@ -31,6 +32,6 @@ export interface ThemeConfig {
 }
 
 export const DEFAULT_THEME_CONFIG: ThemeConfig = {
-  presetId: "dark-gold",
-  accentId: "gold",
+  presetId: "dark-techy",
+  accentId: "cyan",
 };

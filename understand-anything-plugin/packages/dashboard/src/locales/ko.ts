@@ -17,7 +17,7 @@ export const ko = {
     truncated: "(생략)",
     preview: "미리보기",
     doubleClickToOpen: "두 번 클릭하여 열기",
-    appName: "Understand Anything",
+    appName: "SystemaOps",
     pressKeyboard: "? 키를 눌러 키보드 단축키 보기",
     path: "경로",
     theme: "테마",
@@ -268,7 +268,7 @@ edgeLabels: {
     title: "노드 간 경로 찾기 (P)",
   },
   onboarding: {
-    header: "UNDERSTAND-ANYTHING · 시작하기",
+    header: "SYSTEMAOPS · 시작하기",
     skipForever: "다시 보지 않기",
     prev: "이전",
     next: "다음",
@@ -276,7 +276,7 @@ edgeLabels: {
     steps: [
       {
         title: "지식 그래프에 오신 것을 환영합니다",
-        body: "보이는 점과 선은 Understand-Anything이 이 프로젝트에서 추출한 엔티티와 관계입니다. 노드는 코드 쪽의 파일·클래스·함수일 수도 있고, 지식 위키 쪽의 개념·엔티티·진술일 수도 있습니다.",
+        body: "보이는 점과 선은 SystemaOps가 이 프로젝트에서 추출한 엔티티와 관계입니다. 노드는 코드 쪽의 파일·클래스·함수일 수도 있고, 지식 위키 쪽의 개념·엔티티·진술일 수도 있습니다.",
         hint: "5단계로 핵심 조작을 살펴봅니다",
       },
       {

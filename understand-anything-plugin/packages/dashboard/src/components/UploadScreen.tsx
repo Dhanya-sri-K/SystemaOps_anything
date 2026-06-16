@@ -22,6 +22,7 @@ export default function UploadScreen({ onTokenValid, initialError }: UploadScree
   const setGraph = useDashboardStore((s) => s.setGraph);
   const setDomainGraph = useDashboardStore((s) => s.setDomainGraph);
   const setUploadedFiles = useDashboardStore((s) => s.setUploadedFiles);
+  const clearChatHistory = useDashboardStore((s) => s.clearChatHistory);
 
   const [activeTab, setActiveTab] = useState<"upload" | "github" | "server">("upload");
   const [tokenInput, setTokenInput] = useState("");
@@ -87,6 +88,7 @@ export default function UploadScreen({ onTokenValid, initialError }: UploadScree
       // Save to store
       setUploadedFiles(uploadedFiles);
       setDomainGraph(domainGraph);
+      clearChatHistory();
       setGraph(graph);
       onTokenValid("__local__");
     } catch (err) {
@@ -94,7 +96,7 @@ export default function UploadScreen({ onTokenValid, initialError }: UploadScree
       setError(err instanceof Error ? err.message : "Failed to analyze the directory. Make sure it contains valid files.");
       setStatus("idle");
     }
-  }, [setGraph, setDomainGraph, setUploadedFiles, onTokenValid]);
+  }, [setGraph, setDomainGraph, setUploadedFiles, clearChatHistory, onTokenValid]);
 
   // Handle HTML5 File Input Change
   const handleFolderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -201,6 +203,7 @@ export default function UploadScreen({ onTokenValid, initialError }: UploadScree
       
       setUploadedFiles(uploadedFiles);
       setDomainGraph(domainGraph);
+      clearChatHistory();
       setGraph(graph);
       onTokenValid("__local__");
     } catch (err) {
@@ -242,22 +245,22 @@ export default function UploadScreen({ onTokenValid, initialError }: UploadScree
   if (isScanning) {
     const percent = totalFiles > 0 ? Math.round((currentFileIndex / totalFiles) * 100) : 0;
     return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-root text-text-primary noise-overlay p-6">
-        <div className="w-full max-w-xl p-8 bg-surface border border-border-subtle rounded-xl shadow-2xl flex flex-col items-center">
+      <div className="h-screen w-screen flex flex-col items-center justify-center bg-root text-text-primary noise-overlay cyber-grid p-6">
+        <div className="w-full max-w-xl p-8 bg-surface/90 backdrop-blur-md border border-border-medium rounded-xl shadow-[0_0_30px_rgba(0,245,255,0.25)] flex flex-col items-center">
           
           {/* Animated Spinner & Progress */}
           <div className="relative w-24 h-24 mb-8 flex items-center justify-center">
             {/* Outer spinning ring */}
-            <div className="absolute inset-0 rounded-full border-4 border-accent/10 border-t-accent animate-spin" />
+            <div className="absolute inset-0 rounded-full border-4 border-border-subtle border-t-accent animate-spin shadow-[0_0_12px_rgba(0,242,254,0.2)]" />
             {/* Inner pulsing glow */}
-            <div className="w-16 h-16 rounded-full bg-accent/5 animate-pulse flex items-center justify-center">
-              <span className="text-xs font-mono font-medium text-accent">
-                {status === "downloading-files" ? `${percent}%` : "UA"}
+            <div className="w-16 h-16 rounded-full bg-accent/10 border border-accent/20 animate-pulse flex items-center justify-center shadow-[0_0_15px_rgba(0,242,254,0.15)]">
+              <span className="text-xs font-mono font-bold text-accent">
+                {status === "downloading-files" ? `${percent}%` : "SO"}
               </span>
             </div>
           </div>
 
-          <h2 className="text-xl font-heading text-text-primary mb-2 text-center">
+          <h2 className="text-xl font-heading text-text-primary mb-2 text-center tracking-wider uppercase font-bold">
             {status === "fetching-tree" && "Connecting to GitHub..."}
             {status === "downloading-files" && "Downloading Repository Files"}
             {status === "analyzing" && "Analyzing Codebase Structure"}
@@ -288,27 +291,27 @@ export default function UploadScreen({ onTokenValid, initialError }: UploadScree
   }
 
   return (
-    <div className="h-screen w-screen flex items-center justify-center bg-root noise-overlay p-6 overflow-auto">
-      <div className="w-full max-w-3xl flex flex-col md:flex-row bg-surface border border-border-subtle rounded-xl shadow-2xl overflow-hidden min-h-[500px]">
+    <div className="h-screen w-screen flex items-center justify-center bg-root noise-overlay cyber-grid p-6 overflow-auto">
+      <div className="w-full max-w-3xl flex flex-col md:flex-row bg-surface/95 backdrop-blur-md border border-border-medium rounded-xl shadow-[0_0_30px_rgba(0,245,255,0.25)] overflow-hidden min-h-[500px]">
         
         {/* Left pane: Branding & Instructions */}
         <div className="md:w-5/12 bg-elevated/40 p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-border-subtle">
           <div>
-            <div className="w-10 h-10 rounded-lg bg-accent/10 border border-accent/30 flex items-center justify-center mb-6">
-              <span className="font-heading text-lg text-accent font-semibold">UA</span>
+            <div className="w-12 h-12 rounded-lg bg-accent/10 border border-accent/40 flex items-center justify-center mb-6 shadow-[0_0_15px_rgba(0,242,254,0.2)] animate-pulse">
+              <span className="font-heading text-xl text-accent font-bold tracking-wider">SO</span>
             </div>
-            <h1 className="font-heading text-3xl text-text-primary tracking-wide mb-3 leading-tight">
-              Understand Anything
+            <h1 className="font-heading text-3xl text-text-primary tracking-wider mb-3 leading-tight font-bold uppercase">
+              SystemaOps
             </h1>
-            <p className="text-text-secondary text-sm leading-relaxed mb-6">
-              An interactive visual environment for understanding code bases. Upload a local folder or paste a GitHub repo URL to construct maps, examine modules, and generate guided walks.
+            <p className="text-text-secondary text-sm leading-relaxed mb-6 font-sans">
+              Developer Operations Control Center. Upload a local folder or connect a GitHub repository to construct architectural maps, trace dependencies, and analyze system operations in real time.
             </p>
           </div>
           
           {/* Tech badge icons */}
           <div className="flex gap-2.5 flex-wrap">
             {["React Flow", "Zustand", "Tailwind 4", "Client-Side"].map((tech) => (
-              <span key={tech} className="text-[10px] uppercase font-mono tracking-wider text-accent border border-accent/20 bg-accent/5 px-2.5 py-1 rounded-full">
+              <span key={tech} className="text-[10px] uppercase font-mono tracking-wider text-accent border border-accent/30 bg-accent/10 px-2.5 py-1 rounded-md shadow-[0_0_8px_rgba(0,242,254,0.1)]">
                 {tech}
               </span>
             ))}
@@ -362,7 +365,7 @@ export default function UploadScreen({ onTokenValid, initialError }: UploadScree
                 onClick={() => fileInputRef.current?.click()}
                 className={`flex-1 flex flex-col items-center justify-center border-2 border-dashed rounded-xl cursor-pointer p-6 transition-all duration-300 ${
                   isDragActive
-                    ? "border-accent bg-accent/5 shadow-[0_0_15px_rgba(212,165,116,0.1)] scale-[0.99]"
+                    ? "border-accent bg-accent/5 shadow-[0_0_15px_rgba(0,245,255,0.15)] scale-[0.99]"
                     : "border-border-medium hover:border-accent/50 hover:bg-elevated/20"
                 }`}
               >
@@ -411,7 +414,7 @@ export default function UploadScreen({ onTokenValid, initialError }: UploadScree
                 <button
                   type="submit"
                   disabled={!githubUrl.trim()}
-                  className="w-full py-3 bg-accent text-root font-semibold rounded-lg transition-all hover:brightness-110 hover:shadow-[0_0_15px_rgba(212,165,116,0.3)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                  className="w-full py-3 bg-accent text-root font-semibold rounded-lg transition-all hover:brightness-110 hover:shadow-[0_0_15px_rgba(0,245,255,0.35)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                 >
                   Fetch and Analyze
                 </button>
@@ -440,7 +443,7 @@ export default function UploadScreen({ onTokenValid, initialError }: UploadScree
                 <button
                   type="submit"
                   disabled={!tokenInput.trim()}
-                  className="w-full py-3 bg-accent text-root font-semibold rounded-lg transition-all hover:brightness-110 hover:shadow-[0_0_15px_rgba(212,165,116,0.3)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                  className="w-full py-3 bg-accent text-root font-semibold rounded-lg transition-all hover:brightness-110 hover:shadow-[0_0_15px_rgba(0,245,255,0.35)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                 >
                   Connect Server
                 </button>

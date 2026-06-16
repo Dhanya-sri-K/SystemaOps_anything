@@ -14,6 +14,7 @@ export default function LearnPanel() {
   const setGraph = useDashboardStore((s) => s.setGraph);
   const setDomainGraph = useDashboardStore((s) => s.setDomainGraph);
   const setUploadedFiles = useDashboardStore((s) => s.setUploadedFiles);
+  const clearChatHistory = useDashboardStore((s) => s.clearChatHistory);
   
   const tourActive = useDashboardStore((s) => s.tourActive);
   const currentTourStep = useDashboardStore((s) => s.currentTourStep);
@@ -160,6 +161,7 @@ export default function LearnPanel() {
 
       newGraph.tour = geminiTourSteps;
       
+      clearChatHistory();
       setGraph(newGraph);
       setGithubUrl("");
     } catch (err) {

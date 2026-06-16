@@ -24,8 +24,8 @@ function ContainerNodeComponent({ data, width, height }: NodeProps<ContainerFlow
   const borderColor = data.isDiffAffected
     ? "var(--color-diff-changed)"
     : data.isExpanded || data.isFocusedViaChild
-      ? "rgba(212,165,116,0.6)"
-      : "rgba(212,165,116,0.25)";
+      ? "rgba(0,245,255,0.6)"
+      : "rgba(0,245,255,0.25)";
   const borderWidth = data.isExpanded || data.isFocusedViaChild ? 1.5 : 1;
 
   const labelDimmed = data.name === "~";
@@ -42,7 +42,7 @@ function ContainerNodeComponent({ data, width, height }: NodeProps<ContainerFlow
       tabIndex={0}
       aria-expanded={data.isExpanded}
       aria-label={`${labelText} container, ${data.childCount} item${data.childCount !== 1 ? "s" : ""}, ${data.isExpanded ? "expanded" : "collapsed"}`}
-      className="rounded-xl cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-[rgba(212,165,116,0.6)]"
+      className="rounded-xl cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-[rgba(0,245,255,0.6)]"
       style={{
         width,
         height,
@@ -79,8 +79,8 @@ function ContainerNodeComponent({ data, width, height }: NodeProps<ContainerFlow
               style={{
                 marginLeft: 6,
                 fontSize: 10,
-                background: "rgba(212,165,116,0.2)",
-                color: "var(--color-gold, #d4a574)",
+                background: "rgba(0,245,255,0.2)",
+                color: "var(--color-accent, #00f5ff)",
                 padding: "1px 6px",
                 borderRadius: 8,
               }}

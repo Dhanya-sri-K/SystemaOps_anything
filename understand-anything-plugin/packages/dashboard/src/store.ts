@@ -40,6 +40,7 @@ export const EDGE_CATEGORY_MAP: Record<EdgeCategory, string[]> = {
 };
 
 export const DOMAIN_EDGE_TYPES = EDGE_CATEGORY_MAP.domain;
+export const CHAT_HISTORY_KEY = "systemaops-chat-history";
 
 const DEFAULT_FILTERS: FilterState = {
   nodeTypes: new Set<NodeType>(ALL_NODE_TYPES),
@@ -121,6 +122,8 @@ interface DashboardStore {
   addChatbotMessage: (message: { role: "user" | "model"; parts: string }) => void;
   setChatbotLoading: (loading: boolean) => void;
   resetToLocalCodebase: () => void;
+  clearChatHistory: () => void;
+
 
   /** id → node lookup, rebuilt by setGraph. Empty before any graph loads. */
   nodesById: Map<string, GraphNode>;
@@ -337,24 +340,73 @@ export const useDashboardStore = create<DashboardStore>()((set, get) => ({
   setTourLoading: (loading) => set({ isTourLoading: loading }),
   setTourError: (error) => set({ tourError: error }),
   setAnalyzingRepoLabel: (label) => set({ analyzingRepoLabel: label }),
-  setChatbotMessages: (messages) => set({ chatbotMessages: messages }),
-  addChatbotMessage: (message) => set((state) => ({ chatbotMessages: [...state.chatbotMessages, message] })),
+  setChatbotMessages: (messages) => set((state) => {
+    if (typeof window !== "undefined") {
+      const projectName = state.graph?.project.name || "default";
+      localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify({
+        projectName,
+        messages
+      }));
+    }
+    return { chatbotMessages: messages };
+  }),
+  addChatbotMessage: (message) => set((state) => {
+    const newMessages = [...state.chatbotMessages, message];
+    if (typeof window !== "undefined") {
+      const projectName = state.graph?.project.name || "default";
+      localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify({
+        projectName,
+        messages: newMessages
+      }));
+    }
+    return { chatbotMessages: newMessages };
+  }),
   setChatbotLoading: (loading) => set({ isChatbotLoading: loading }),
+  
+  clearChatHistory: () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(CHAT_HISTORY_KEY);
+    }
+    set({
+      chatbotMessages: [
+        {
+          role: "model" as const,
+          parts: "Hi! I've read the entire codebase. Ask me anything about this project — or paste a GitHub URL in the tour panel to ask about any other project!"
+        }
+      ]
+    });
+  },
   
   resetToLocalCodebase: () => {
     const { localGraph, localDomainGraph, localUploadedFiles } = get();
     if (localGraph) {
+      let chatbotMessages = [
+        {
+          role: "model" as const,
+          parts: "Hi! I've read the entire codebase. Ask me anything about this project — or paste a GitHub URL in the tour panel to ask about any other project!"
+        }
+      ];
+
+      if (typeof window !== "undefined") {
+        try {
+          const saved = localStorage.getItem(CHAT_HISTORY_KEY);
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (parsed && parsed.projectName === localGraph.project.name && Array.isArray(parsed.messages)) {
+              chatbotMessages = parsed.messages;
+            }
+          }
+        } catch (e) {
+          console.warn("Failed to load chat history:", e);
+        }
+      }
+
       set({
         graph: localGraph,
         domainGraph: localDomainGraph,
         uploadedFiles: localUploadedFiles,
         analyzingRepoLabel: "Local Project",
-        chatbotMessages: [
-          {
-            role: "model",
-            parts: "Hi! I've read the entire codebase. Ask me anything about this project — or paste a GitHub URL in the tour panel to ask about any other project!"
-          }
-        ],
+        chatbotMessages,
         navigationLevel: "overview",
         activeLayerId: null,
         selectedNodeId: null,
@@ -452,6 +504,27 @@ export const useDashboardStore = create<DashboardStore>()((set, get) => ({
     // Backup the local graph on first load
     const localGraph = get().localGraph === null ? graph : get().localGraph;
 
+    let chatbotMessages = [
+      {
+        role: "model" as const,
+        parts: "Hi! I've read the entire codebase. Ask me anything about this project — or paste a GitHub URL in the tour panel to ask about any other project!"
+      }
+    ];
+
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem(CHAT_HISTORY_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.projectName === graph.project.name && Array.isArray(parsed.messages)) {
+            chatbotMessages = parsed.messages;
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to load chat history:", e);
+      }
+    }
+
     set({
       graph,
       localGraph,
@@ -473,12 +546,7 @@ export const useDashboardStore = create<DashboardStore>()((set, get) => ({
       containerSizeMemory: new Map(),
       stage1Tick: 0,
       layoutIssues: [],
-      chatbotMessages: [
-        {
-          role: "model",
-          parts: "Hi! I've read the entire codebase. Ask me anything about this project — or paste a GitHub URL in the tour panel to ask about any other project!"
-        }
-      ],
+      chatbotMessages,
     });
   },
 

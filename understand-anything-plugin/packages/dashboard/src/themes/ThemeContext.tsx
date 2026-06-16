@@ -9,7 +9,7 @@ import {
 } from "react";
 import type { HeadingFont, PresetId, ThemeConfig, ThemePreset } from "./types.ts";
 import { DEFAULT_THEME_CONFIG } from "./types.ts";
-import { getPreset } from "./presets.ts";
+import { getPreset, PRESETS } from "./presets.ts";
 import { applyTheme } from "./theme-engine.ts";
 
 const STORAGE_KEY = "ua-theme";
@@ -47,7 +47,11 @@ function saveToLocalStorage(config: ThemeConfig): void {
 }
 
 function resolveInitialTheme(metaTheme?: ThemeConfig | null): ThemeConfig {
-  return loadFromLocalStorage() ?? metaTheme ?? DEFAULT_THEME_CONFIG;
+  const local = loadFromLocalStorage() ?? metaTheme ?? DEFAULT_THEME_CONFIG;
+  if (!PRESETS.some((p) => p.id === local.presetId)) {
+    return DEFAULT_THEME_CONFIG;
+  }
+  return local;
 }
 
 interface ThemeProviderProps {

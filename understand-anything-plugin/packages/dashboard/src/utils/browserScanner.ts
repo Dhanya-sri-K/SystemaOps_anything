@@ -1049,7 +1049,7 @@ export async function parseFiles(
     tour.push({
       order: stepOrder++,
       title: "1. Introduction",
-      description: `Welcome to **Understand Anything**, an open-source codebase analysis tool and interactive dashboard that maps software repositories into navigable knowledge graphs of files, functions, classes, and dependencies.\n\nBy bridging deterministic static analysis (using \`web-tree-sitter\` AST parsing) and semantic analysis (using LLM-driven summaries, layer detectors, and guided tours), it helps developers quickly onboard and comprehend large, unfamiliar codebases. The entry point of the interactive UI dashboard is [App.tsx](${appId}), which coordinates all panels, graph layouts, and state management.`,
+      description: `Welcome to **SystemaOps**, an open-source codebase analysis tool and interactive dashboard that maps software repositories into navigable knowledge graphs of files, functions, classes, and dependencies.\n\nBy bridging deterministic static analysis (using \`web-tree-sitter\` AST parsing) and semantic analysis (using LLM-driven summaries, layer detectors, and guided tours), it helps developers quickly onboard and comprehend large, unfamiliar codebases. The entry point of the interactive UI dashboard is [App.tsx](${appId}), which coordinates all panels, graph layouts, and state management.`,
       nodeIds: [appId],
     });
 
@@ -1063,14 +1063,14 @@ export async function parseFiles(
     tour.push({
       order: stepOrder++,
       title: "3. Why is this project useful?",
-      description: `Understand Anything addresses the friction of codebase exploration by providing:\n- **Interactive Visual Mapping**: Renders files as nodes in [GraphView.tsx](${graphViewId}) using React Flow and Dagre layout calculations.\n- **Topologically Sorted Tours**: Organizes learning walks using Kahn's algorithm via [tour-generator.ts](${tourGenId}) to guide newcomers in dependency-respecting order.\n- **Impact Visualizations**: Highlights system nodes impacted by git changes before commits.\n- **Interactive Chat Contexts**: Empowers developers to ask questions and receive answers built on graph-expanded file contexts.`,
+      description: `SystemaOps addresses the friction of codebase exploration by providing:\n- **Interactive Visual Mapping**: Renders files as nodes in [GraphView.tsx](${graphViewId}) using React Flow and Dagre layout calculations.\n- **Topologically Sorted Tours**: Organizes learning walks using Kahn's algorithm via [tour-generator.ts](${tourGenId}) to guide newcomers in dependency-respecting order.\n- **Impact Visualizations**: Highlights system nodes impacted by git changes before commits.\n- **Interactive Chat Contexts**: Empowers developers to ask questions and receive answers built on graph-expanded file contexts.`,
       nodeIds: [tourGenId],
     });
 
     tour.push({
       order: stepOrder++,
       title: "4. Problem Statement",
-      description: `As software repositories grow, they suffer from architectural opacity and documentation decay.\n\nTraditional text editors do not show directory boundaries or dependencies clearly, making it easy to introduce circular imports or unintended ripple effects. New developers take days to understand where critical execution paths begin, and manually written documentation goes out of date with every commit.\n\nUnderstand Anything solves this by combining parser intelligence with LLM context to construct a living, self-healing knowledge graph defined by the system's core interfaces in [types.ts](${typesId}).`,
+      description: `As software repositories grow, they suffer from architectural opacity and documentation decay.\n\nTraditional text editors do not show directory boundaries or dependencies clearly, making it easy to introduce circular imports or unintended ripple effects. New developers take days to understand where critical execution paths begin, and manually written documentation goes out of date with every commit.\n\nSystemaOps solves this by combining parser intelligence with LLM context to construct a living, self-healing knowledge graph defined by the system's core interfaces in [types.ts](${typesId}).`,
       nodeIds: [typesId],
     });
 

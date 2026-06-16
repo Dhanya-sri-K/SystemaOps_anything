@@ -67,56 +67,58 @@ export function ThemePicker() {
       {open && (
         <div className="absolute right-0 top-full mt-2 w-64 rounded-lg glass-heavy shadow-xl z-50 p-3 space-y-3">
           {/* Presets */}
-          <div>
-            <div className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-2">
-              {t.themePicker.theme}
+          {PRESETS.length > 1 && (
+            <div>
+              <div className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-2">
+                {t.themePicker.theme}
+              </div>
+              <div className="space-y-1">
+                {PRESETS.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => handlePreset(p.id)}
+                    className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded text-xs transition-colors ${
+                      p.id === config.presetId
+                        ? "bg-accent/15 text-accent"
+                        : "text-text-secondary hover:text-text-primary hover:bg-elevated"
+                    }`}
+                  >
+                    {/* Color preview dots */}
+                    <div className="flex gap-1">
+                      <span
+                        className="w-3 h-3 rounded-full border border-border-subtle"
+                        style={{ backgroundColor: p.colors.root }}
+                      />
+                      <span
+                        className="w-3 h-3 rounded-full border border-border-subtle"
+                        style={{ backgroundColor: p.colors.surface }}
+                      />
+                      <span
+                        className="w-3 h-3 rounded-full border border-border-subtle"
+                        style={{
+                          backgroundColor:
+                            p.accentSwatches.find((s) => s.id === p.defaultAccentId)?.accent ??
+                            p.accentSwatches[0].accent,
+                        }}
+                      />
+                    </div>
+                    <span>{p.name}</span>
+                    {p.id === config.presetId && (
+                      <svg
+                        className="ml-auto w-3.5 h-3.5 text-accent"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                      >
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="space-y-1">
-              {PRESETS.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => handlePreset(p.id)}
-                  className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded text-xs transition-colors ${
-                    p.id === config.presetId
-                      ? "bg-accent/15 text-accent"
-                      : "text-text-secondary hover:text-text-primary hover:bg-elevated"
-                  }`}
-                >
-                  {/* Color preview dots */}
-                  <div className="flex gap-1">
-                    <span
-                      className="w-3 h-3 rounded-full border border-border-subtle"
-                      style={{ backgroundColor: p.colors.root }}
-                    />
-                    <span
-                      className="w-3 h-3 rounded-full border border-border-subtle"
-                      style={{ backgroundColor: p.colors.surface }}
-                    />
-                    <span
-                      className="w-3 h-3 rounded-full border border-border-subtle"
-                      style={{
-                        backgroundColor:
-                          p.accentSwatches.find((s) => s.id === p.defaultAccentId)?.accent ??
-                          p.accentSwatches[0].accent,
-                      }}
-                    />
-                  </div>
-                  <span>{p.name}</span>
-                  {p.id === config.presetId && (
-                    <svg
-                      className="ml-auto w-3.5 h-3.5 text-accent"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                    >
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
+          )}
 
           {/* Accent swatches */}
           <div>

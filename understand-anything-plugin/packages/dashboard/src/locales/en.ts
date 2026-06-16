@@ -17,7 +17,7 @@ export const en = {
     truncated: "(truncated)",
     preview: "Preview",
     doubleClickToOpen: "double-click to open",
-    appName: "Understand Anything",
+    appName: "SystemaOps",
     pressKeyboard: "Press ? for keyboard shortcuts",
     path: "Path",
     theme: "Theme",
@@ -268,7 +268,7 @@ export const en = {
     title: "Find path between nodes (P)",
   },
   onboarding: {
-    header: "UNDERSTAND-ANYTHING · GET STARTED",
+    header: "SYSTEMAOPS · GET STARTED",
     skipForever: "Don't show again",
     prev: "Previous",
     next: "Next",
@@ -276,7 +276,7 @@ export const en = {
     steps: [
       {
         title: "Welcome to the knowledge graph",
-        body: "The dots and lines you see are entities and relations Understand-Anything extracted from this project. A node can be a file, class, or function from the code — or a concept, entity, or claim from a knowledge wiki.",
+        body: "The dots and lines you see are entities and relations SystemaOps extracted from this project. A node can be a file, class, or function from the code — or a concept, entity, or claim from a knowledge wiki.",
         hint: "Five steps to cover the core operations",
       },
       {

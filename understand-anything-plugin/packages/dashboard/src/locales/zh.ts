@@ -17,7 +17,7 @@ export const zh = {
     truncated: "(已截断)",
     preview: "预览",
     doubleClickToOpen: "双击打开",
-    appName: "Understand Anything",
+    appName: "SystemaOps",
     pressKeyboard: "按 ? 查看键盘快捷键",
     path: "路径",
     theme: "主题",
@@ -268,7 +268,7 @@ export const zh = {
     title: "查找节点间路径 (P)",
   },
   onboarding: {
-    header: "UNDERSTAND-ANYTHING · 入门",
+    header: "SYSTEMAOPS · 入门",
     skipForever: "不再显示",
     prev: "上一步",
     next: "下一步",
@@ -276,7 +276,7 @@ export const zh = {
     steps: [
       {
         title: "欢迎进入知识图",
-        body: "你看到的圆点和连线是 Understand-Anything 把这份项目抽出来的实体和关系。节点可以是代码里的文件、类、函数，也可以是知识 wiki 里的概念、实体或断言。",
+        body: "你看到的圆点和连线是 SystemaOps 把这份项目抽出来的实体和关系。节点可以是代码里的文件、类、函数，也可以是知识 wiki 里的概念、实体或断言。",
         hint: "5 步以内带你过完核心操作",
       },
       {

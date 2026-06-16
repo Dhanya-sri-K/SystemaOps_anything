@@ -272,10 +272,10 @@ function useOverviewGraph() {
       target: agg.targetLayerId,
       label: `${agg.count}`,
       style: {
-        stroke: "rgba(212,165,116,0.4)",
+        stroke: "rgba(0, 245, 255, 0.4)",
         strokeWidth: Math.min(1 + Math.log2(agg.count + 1), 5),
       },
-      labelStyle: { fill: "#a39787", fontSize: 11, fontWeight: 600 },
+      labelStyle: { fill: "#94a3b8", fontSize: 11, fontWeight: 600 },
     }));
 
     const dims = new Map<string, { width: number; height: number }>();
@@ -566,9 +566,9 @@ function useLayerDetailTopology(): LayerDetailTopology & {
     // container, so just fade everything in diff mode at this stage).
     const aggEdges: Edge[] = interContainerAggregated.map((agg, i) => {
       const baseStyle = diffMode
-        ? { stroke: "rgba(212,165,116,0.08)", strokeWidth: 1 }
+        ? { stroke: "rgba(0, 245, 255, 0.08)", strokeWidth: 1 }
         : {
-            stroke: "rgba(212,165,116,0.4)",
+            stroke: "rgba(0, 245, 255, 0.4)",
             strokeWidth: Math.min(1 + Math.log2(agg.count + 1), 5),
           };
       return {
@@ -578,7 +578,7 @@ function useLayerDetailTopology(): LayerDetailTopology & {
         label: String(agg.count),
         style: baseStyle,
         labelStyle: {
-          fill: diffMode ? "rgba(163,151,135,0.3)" : "#a39787",
+          fill: diffMode ? "rgba(148, 163, 184, 0.3)" : "#94a3b8",
           fontSize: 11,
         },
       };
@@ -618,7 +618,7 @@ function useLayerDetailTopology(): LayerDetailTopology & {
           id: `e-${portalEdgeIdx++}`,
           source: atomId,
           target: `portal:${portal.layerId}`,
-          style: { stroke: "rgba(212,165,116,0.2)", strokeWidth: 1, strokeDasharray: "4 4" },
+          style: { stroke: "rgba(0, 245, 255, 0.2)", strokeWidth: 1, strokeDasharray: "4 4" },
           animated: false,
         });
       }
@@ -1227,8 +1227,8 @@ function useLayerDetailGraph() {
           source: realSrc,
           target: realTgt,
           label: m.type,
-          style: { stroke: "rgba(212,165,116,0.5)", strokeWidth: 1.5 },
-          labelStyle: { fill: "#a39787", fontSize: 10 },
+          style: { stroke: "rgba(0, 245, 255, 0.5)", strokeWidth: 1.5 },
+          labelStyle: { fill: "#94a3b8", fontSize: 10 },
         });
       }
     }
@@ -1245,8 +1245,8 @@ function useLayerDetailGraph() {
         source: e.source,
         target: e.target,
         label: e.type,
-        style: { stroke: "rgba(212,165,116,0.5)", strokeWidth: 1.5 },
-        labelStyle: { fill: "#a39787", fontSize: 10 },
+        style: { stroke: "rgba(0, 245, 255, 0.5)", strokeWidth: 1.5 },
+        labelStyle: { fill: "#94a3b8", fontSize: 10 },
       });
     }
     return out;
@@ -1271,10 +1271,10 @@ function useLayerDetailGraph() {
       if ((edge.style as Record<string, unknown>)?.strokeDasharray) return edge;
 
       if (isSelectedEdge) {
-        return { ...edge, animated: true, style: { stroke: "rgba(212,165,116,0.8)", strokeWidth: 2.5 }, labelStyle: { fill: "#d4a574", fontSize: 11, fontWeight: 600 } };
+        return { ...edge, animated: true, style: { stroke: "rgba(0, 245, 255, 0.8)", strokeWidth: 2.5 }, labelStyle: { fill: "#00f5ff", fontSize: 11, fontWeight: 600 } };
       }
       // Fade unrelated edges
-      return { ...edge, animated: false, style: { stroke: "rgba(212,165,116,0.08)", strokeWidth: 1 }, labelStyle: { fill: "rgba(163,151,135,0.2)", fontSize: 10 } };
+      return { ...edge, animated: false, style: { stroke: "rgba(0, 245, 255, 0.08)", strokeWidth: 1 }, labelStyle: { fill: "rgba(148, 163, 184, 0.2)", fontSize: 10 } };
     });
   }, [expandedEdges, topo.portalEdges, selectedNodeId]);
 
@@ -1512,7 +1512,7 @@ function GraphViewInner() {
         <div className="absolute top-14 left-1/2 -translate-x-1/2 z-10">
           <button
             onClick={() => setFocusNode(null)}
-            className="px-4 py-2 rounded-full bg-elevated border border-gold/30 text-gold text-xs font-semibold tracking-wider uppercase hover:bg-gold/10 transition-colors flex items-center gap-2 shadow-lg"
+            className="px-4 py-2 rounded-full bg-elevated border border-accent/30 text-accent text-xs font-semibold tracking-wider uppercase hover:bg-accent/10 hover:shadow-[0_0_12px_rgba(0,245,255,0.25)] transition-colors flex items-center gap-2 shadow-lg"
           >
             <span>Showing neighborhood</span>
             <span className="text-text-muted">&times;</span>
@@ -1558,12 +1558,12 @@ function GraphViewInner() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            background: "rgba(10,10,10,0.5)",
+            background: "rgba(10,10,15,0.5)",
             pointerEvents: "none",
             zIndex: 10,
           }}
         >
-          <span style={{ color: "#d4a574", fontSize: 14 }}>
+          <span style={{ color: "var(--color-accent, #00f5ff)", fontSize: 14 }}>
             {tourFitPending ? "Locating tour highlight…" : "Computing layout…"}
           </span>
         </div>
