@@ -106,6 +106,32 @@ Point `/understand-knowledge` at a [Karpathy-pattern LLM wiki](https://gist.gith
   </tr>
 </table>
 
+### 🖥️ Professional IDE-Style Workspace
+
+The dashboard features a professional, high-performance IDE-style analytical workspace designed for maximum readability and focus:
+- **Collapsible Left Sidebar**: Houses configuration selectors, view toggle controls (Domain vs Structural, Files vs Classes, Diff modes), architectural layer legends, and node filters (switches with neon status indicators).
+- **Centered Search Control**: A central header action equipped with fuzzy/semantic parsing and quick keyboard focusing (`/`).
+- **Collapsible Right Details Pane**: Slides out automatically when a node is selected, holding plain-English summaries, interactive code viewers, and AI learning guides without cluttering the main graph.
+
+### 🧭 Centered Interactive Tours
+
+Learn any codebase visually and chronologically using the auto-generated project tours:
+- **Spacious Centered Modals**: Guided steps overlay in a centered layout with backdrop blurring (`backdrop-blur-sm`).
+- **Keyboard Navigation**: Press Left/Right arrow keys to navigate steps, or Escape to exit.
+- **Progress & Animating Indicators**: Tracks your tour progression with neon progress bars, step counts, and smooth fade transitions.
+
+### 💬 Scoped Chat Persistence & Auto-Reset
+
+Chat with the AI about your codebase while keeping your workspace state preserved:
+- **Project-Scoped Persistence**: Conversation histories are saved locally via `localStorage` and mapped directly to the active project's name, retaining context even across page refreshes.
+- **Automatic Upload Reset**: Whenever you select/drag-and-drop a new local directory or submit a new GitHub URL, the chat history automatically clears and resets to the default greeting, starting a fresh session.
+
+### ⚡ Token Headroom & Free-Tier Optimization
+
+To keep usage cost-effective and prevent API request failures:
+- **Automated Token Headroom**: Context sizing algorithms automatically scale and slice the codebase files to `80,000` characters for tours and `70,000` characters for chatbot sessions.
+- **Safe Free-Tier Limits**: Ensures prompts consistently fit within OpenRouter's free-tier `29,500` token limit (including templates and chat histories) to prevent token overrun errors.
+
 ---
 
 ## 🚀 Quick Start
