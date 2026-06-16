@@ -15,7 +15,7 @@ import PersonaSelector from "./components/PersonaSelector";
 import ProjectOverview from "./components/ProjectOverview";
 import FileExplorer from "./components/FileExplorer";
 import WarningBanner from "./components/WarningBanner";
-import TokenGate from "./components/TokenGate";
+import UploadScreen from "./components/UploadScreen";
 import MobileLayout from "./components/MobileLayout";
 import { useIsMobile } from "./hooks/useIsMobile";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
@@ -24,6 +24,8 @@ import { ThemeProvider } from "./themes/index.ts";
 import { ThemePicker } from "./components/ThemePicker.tsx";
 import type { ThemeConfig } from "./themes/index.ts";
 import { I18nProvider, useI18n } from "./contexts/I18nContext.tsx";
+import ProjectChatbot from "./components/ProjectChatbot";
+
 
 // Lazy-load heavy / optional components so they ship in separate chunks.
 const CodeViewer = lazy(() => import("./components/CodeViewer"));
@@ -88,26 +90,43 @@ function resolveInitialToken(): string | null {
 
 function App() {
   const [accessToken, setAccessToken] = useState<string | null>(resolveInitialToken);
+  const graph = useDashboardStore((s) => s.graph);
 
   const handleTokenValid = useCallback((token: string) => {
     sessionStorage.setItem(SESSION_TOKEN_KEY, token);
     setAccessToken(token);
   }, []);
 
+  const handleResetProject = useCallback(() => {
+    sessionStorage.removeItem(SESSION_TOKEN_KEY);
+    useDashboardStore.setState({
+      graph: null,
+      domainGraph: null,
+      uploadedFiles: null
+    });
+    setAccessToken(null);
+  }, []);
+
   // In demo mode, skip token gate entirely
   if (DEMO_MODE) {
-    return <Dashboard accessToken="__demo__" />;
+    return <Dashboard accessToken="__demo__" onResetProject={handleResetProject} />;
   }
 
-  // Show the token gate when no token is available
-  if (accessToken === null) {
-    return <TokenGate onTokenValid={handleTokenValid} />;
+  // Show the upload screen when no token and no local graph is available
+  if (accessToken === null && graph === null) {
+    return <UploadScreen onTokenValid={handleTokenValid} />;
   }
 
-  return <Dashboard accessToken={accessToken} />;
+  return <Dashboard accessToken={accessToken ?? "__local__"} onResetProject={handleResetProject} />;
 }
 
-function Dashboard({ accessToken }: { accessToken: string }) {
+function Dashboard({
+  accessToken,
+  onResetProject,
+}: {
+  accessToken: string;
+  onResetProject: () => void;
+}) {
   const setGraph = useDashboardStore((s) => s.setGraph);
   const setDomainGraph = useDashboardStore((s) => s.setDomainGraph);
   const setDiffOverlay = useDashboardStore((s) => s.setDiffOverlay);
@@ -115,8 +134,10 @@ function Dashboard({ accessToken }: { accessToken: string }) {
   const [graphIssues, setGraphIssues] = useState<GraphIssue[]>([]);
   const [metaTheme, setMetaTheme] = useState<ThemeConfig | null>(null);
   const [outputLanguage, setOutputLanguage] = useState<string | undefined>();
+  const graph = useDashboardStore((s) => s.graph);
 
   useEffect(() => {
+    if (accessToken === "__local__") return;
     fetch(dataUrl("meta.json", accessToken))
       .then((r) => (r.ok ? r.json() : null))
       .then((meta) => {
@@ -129,9 +150,10 @@ function Dashboard({ accessToken }: { accessToken: string }) {
         if (config?.outputLanguage) setOutputLanguage(config.outputLanguage);
       })
       .catch(() => {});
-  }, []);
+  }, [accessToken]);
 
   useEffect(() => {
+    if (accessToken === "__local__") return;
     fetch(dataUrl("knowledge-graph.json", accessToken))
       .then((res) => res.json())
       .then((data: unknown) => {
@@ -162,9 +184,10 @@ function Dashboard({ accessToken }: { accessToken: string }) {
         console.error("Failed to load knowledge graph:", err);
         setLoadError(`Failed to load knowledge graph: ${err instanceof Error ? err.message : String(err)}`);
       });
-  }, [setGraph]);
+  }, [setGraph, accessToken]);
 
   useEffect(() => {
+    if (accessToken === "__local__") return;
     fetch(dataUrl("diff-overlay.json", accessToken))
       .then((res) => {
         if (!res.ok) return null;
@@ -186,9 +209,10 @@ function Dashboard({ accessToken }: { accessToken: string }) {
         }
       })
       .catch(() => {});
-  }, [setDiffOverlay]);
+  }, [setDiffOverlay, accessToken]);
 
   useEffect(() => {
+    if (accessToken === "__local__") return;
     fetch(dataUrl("domain-graph.json", accessToken))
       .then((res) => {
         if (!res.ok) return null;
@@ -204,7 +228,19 @@ function Dashboard({ accessToken }: { accessToken: string }) {
         }
       })
       .catch(() => {});
-  }, [setDomainGraph]);
+  }, [setDomainGraph, accessToken]);
+
+  if (graph === null) {
+    if (loadError) {
+      return <UploadScreen onTokenValid={onResetProject} initialError={loadError} />;
+    }
+    return (
+      <div className="h-screen w-screen flex flex-col items-center justify-center bg-root noise-overlay">
+        <div className="w-12 h-12 rounded-full border-4 border-accent/10 border-t-accent animate-spin mb-4" />
+        <p className="text-text-muted text-sm font-mono">Loading project graph...</p>
+      </div>
+    );
+  }
 
   return (
     <I18nProvider language={outputLanguage ?? "en"}>
@@ -213,6 +249,7 @@ function Dashboard({ accessToken }: { accessToken: string }) {
           accessToken={accessToken}
           loadError={loadError}
           graphIssues={graphIssues}
+          onResetProject={onResetProject}
         />
       </ThemeProvider>
     </I18nProvider>
@@ -223,10 +260,12 @@ function DashboardContent({
   accessToken,
   loadError,
   graphIssues,
+  onResetProject,
 }: {
   accessToken: string;
   loadError: string | null;
   graphIssues: GraphIssue[];
+  onResetProject: () => void;
 }) {
   const graph = useDashboardStore((s) => s.graph);
   const selectedNodeId = useDashboardStore((s) => s.selectedNodeId);
@@ -573,6 +612,16 @@ function DashboardContent({
 
         {/* Right — fixed actions */}
         <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+          <button
+            onClick={onResetProject}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-accent/10 border border-accent/20 text-accent hover:bg-accent/20 transition-colors cursor-pointer"
+            title="Upload another folder or GitHub repository"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            <span>Upload New</span>
+          </button>
           <FilterPanel />
           <ExportMenu />
           <button
@@ -708,6 +757,9 @@ function DashboardContent({
           <OnboardingOverlay onDismiss={dismissOnboarding} />
         </Suspense>
       )}
+
+      {/* Floating chatbot */}
+      <ProjectChatbot />
     </div>
   );
 }

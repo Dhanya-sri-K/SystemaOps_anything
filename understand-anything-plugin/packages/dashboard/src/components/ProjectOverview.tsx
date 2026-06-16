@@ -17,6 +17,22 @@ export default function ProjectOverview() {
   const { project, nodes, edges, layers } = graph;
   const hasTour = graph.tour.length > 0;
 
+  const uploadedFiles = useDashboardStore((s) => s.uploadedFiles);
+  const readmeEntry = uploadedFiles?.get("README.md") || uploadedFiles?.get("readme.md");
+  const isReadmeGenerated = nodes.some(n => n.name.toLowerCase() === "readme.md" && n.tags.includes("generated"));
+
+  const handleDownloadReadme = () => {
+    if (!readmeEntry) return;
+    const blob = new Blob([readmeEntry.content], { type: "text/markdown;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "README.md");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const typeCounts: Record<string, number> = {};
   for (const node of nodes) {
     typeCounts[node.type] = (typeCounts[node.type] ?? 0) + 1;
@@ -216,6 +232,45 @@ export default function ProjectOverview() {
         >
           {t.common.startGuidedTour}
         </button>
+      )}
+
+      {/* View & Download README buttons */}
+      {readmeEntry && (
+        <div className="mt-4 space-y-2">
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                const node = nodes.find(n => n.name.toLowerCase() === "readme.md");
+                if (node) {
+                  useDashboardStore.getState().selectNode(node.id);
+                } else {
+                  useDashboardStore.getState().selectNode("file:README.md");
+                }
+              }}
+              className="flex-1 flex items-center justify-center gap-1.5 bg-elevated border border-border-subtle hover:bg-surface text-text-secondary hover:text-text-primary text-xs font-semibold py-2 px-3 rounded-lg transition-all duration-200 cursor-pointer"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              <span>View README</span>
+            </button>
+            <button
+              onClick={handleDownloadReadme}
+              className="flex-1 flex items-center justify-center gap-1.5 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 text-amber-400 text-xs font-semibold py-2 px-3 rounded-lg transition-all duration-200 cursor-pointer"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              <span>Download README</span>
+            </button>
+          </div>
+          {isReadmeGenerated && (
+            <p className="text-[10px] text-amber-500/60 font-mono text-center">
+              * Egonex-AI analyzed codebase and auto-created this README.md
+            </p>
+          )}
+        </div>
       )}
     </div>
   );

@@ -67,6 +67,7 @@ export default function CodeViewer({
   const viewMode = useDashboardStore((s) => s.viewMode);
   const codeViewerNodeId = useDashboardStore((s) => s.codeViewerNodeId);
   const closeCodeViewer = useDashboardStore((s) => s.closeCodeViewer);
+  const uploadedFiles = useDashboardStore((s) => s.uploadedFiles);
   const activeGraph = viewMode === "domain" && domainGraph ? domainGraph : graph;
   // Files tab always builds its tree from the structural graph, so a node ID opened from
   // there may not exist in the active (domain) graph — fall back to the structural graph.
@@ -84,6 +85,22 @@ export default function CodeViewer({
   useEffect(() => {
     if (!node?.filePath) {
       setState({ status: "error", source: null, error: "This node does not have a file path." });
+      return;
+    }
+
+    if (uploadedFiles && uploadedFiles.has(node.filePath)) {
+      const fileData = uploadedFiles.get(node.filePath)!;
+      setState({
+        status: "loaded",
+        source: {
+          path: node.filePath,
+          language: fallbackLanguage(node.filePath),
+          content: fileData.content,
+          sizeBytes: fileData.sizeBytes,
+          lineCount: fileData.lineCount,
+        },
+        error: null,
+      });
       return;
     }
 
@@ -117,7 +134,7 @@ export default function CodeViewer({
       });
 
     return () => controller.abort();
-  }, [accessToken, node?.filePath]);
+  }, [accessToken, node?.filePath, uploadedFiles]);
 
   const highlightedRange = useMemo(() => {
     if (!node?.lineRange) return null;

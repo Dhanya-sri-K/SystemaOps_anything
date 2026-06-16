@@ -99,6 +99,29 @@ const MAX_HISTORY = 50;
 
 interface DashboardStore {
   graph: KnowledgeGraph | null;
+  uploadedFiles: Map<string, { content: string; sizeBytes: number; lineCount: number }> | null;
+  setUploadedFiles: (files: Map<string, { content: string; sizeBytes: number; lineCount: number }> | null) => void;
+  
+  // Local project backups to allow switching back
+  localGraph: KnowledgeGraph | null;
+  localDomainGraph: KnowledgeGraph | null;
+  localUploadedFiles: Map<string, { content: string; sizeBytes: number; lineCount: number }> | null;
+
+  // Gemini project tour & chatbot state
+  isTourLoading: boolean;
+  tourError: string | null;
+  analyzingRepoLabel: string;
+  chatbotMessages: Array<{ role: "user" | "model"; parts: string }>;
+  isChatbotLoading: boolean;
+
+  setTourLoading: (loading: boolean) => void;
+  setTourError: (error: string | null) => void;
+  setAnalyzingRepoLabel: (label: string) => void;
+  setChatbotMessages: (messages: Array<{ role: "user" | "model"; parts: string }>) => void;
+  addChatbotMessage: (message: { role: "user" | "model"; parts: string }) => void;
+  setChatbotLoading: (loading: boolean) => void;
+  resetToLocalCodebase: () => void;
+
   /** id → node lookup, rebuilt by setGraph. Empty before any graph loads. */
   nodesById: Map<string, GraphNode>;
   /** id → layer id (first-matching-layer wins), rebuilt by setGraph. Empty before any graph loads. */
@@ -288,6 +311,61 @@ function layerResetIfChanged(
 
 export const useDashboardStore = create<DashboardStore>()((set, get) => ({
   graph: null,
+  uploadedFiles: null,
+  setUploadedFiles: (files) => {
+    const localUploadedFiles = get().localUploadedFiles === null ? files : get().localUploadedFiles;
+    set({ uploadedFiles: files, localUploadedFiles });
+  },
+
+  // Local backups
+  localGraph: null,
+  localDomainGraph: null,
+  localUploadedFiles: null,
+
+  // Gemini state
+  isTourLoading: false,
+  tourError: null,
+  analyzingRepoLabel: "Local Project",
+  chatbotMessages: [
+    {
+      role: "model",
+      parts: "Hi! I've read the entire codebase. Ask me anything about this project — or paste a GitHub URL in the tour panel to ask about any other project!"
+    }
+  ],
+  isChatbotLoading: false,
+
+  setTourLoading: (loading) => set({ isTourLoading: loading }),
+  setTourError: (error) => set({ tourError: error }),
+  setAnalyzingRepoLabel: (label) => set({ analyzingRepoLabel: label }),
+  setChatbotMessages: (messages) => set({ chatbotMessages: messages }),
+  addChatbotMessage: (message) => set((state) => ({ chatbotMessages: [...state.chatbotMessages, message] })),
+  setChatbotLoading: (loading) => set({ isChatbotLoading: loading }),
+  
+  resetToLocalCodebase: () => {
+    const { localGraph, localDomainGraph, localUploadedFiles } = get();
+    if (localGraph) {
+      set({
+        graph: localGraph,
+        domainGraph: localDomainGraph,
+        uploadedFiles: localUploadedFiles,
+        analyzingRepoLabel: "Local Project",
+        chatbotMessages: [
+          {
+            role: "model",
+            parts: "Hi! I've read the entire codebase. Ask me anything about this project — or paste a GitHub URL in the tour panel to ask about any other project!"
+          }
+        ],
+        navigationLevel: "overview",
+        activeLayerId: null,
+        selectedNodeId: null,
+        focusNodeId: null,
+        tourActive: false,
+        currentTourStep: 0,
+        tourHighlightedNodeIds: []
+      });
+    }
+  },
+
   nodesById: new Map<string, GraphNode>(),
   nodeIdToLayerId: new Map<string, string>(),
   nodeIdToLayerIds: new Map<string, Set<string>>(),
@@ -370,8 +448,13 @@ export const useDashboardStore = create<DashboardStore>()((set, get) => ({
     // Preserve domain view if a domain graph is already loaded
     const keepDomainView = viewMode === "domain" && domainGraph !== null;
     const { nodesById, nodeIdToLayerId, nodeIdToLayerIds } = buildGraphIndexes(graph);
+    
+    // Backup the local graph on first load
+    const localGraph = get().localGraph === null ? graph : get().localGraph;
+
     set({
       graph,
+      localGraph,
       nodesById,
       nodeIdToLayerId,
       nodeIdToLayerIds,
@@ -390,6 +473,12 @@ export const useDashboardStore = create<DashboardStore>()((set, get) => ({
       containerSizeMemory: new Map(),
       stage1Tick: 0,
       layoutIssues: [],
+      chatbotMessages: [
+        {
+          role: "model",
+          parts: "Hi! I've read the entire codebase. Ask me anything about this project — or paste a GitHub URL in the tour panel to ask about any other project!"
+        }
+      ],
     });
   },
 
@@ -675,7 +764,8 @@ export const useDashboardStore = create<DashboardStore>()((set, get) => ({
   activeDomainId: null,
 
   setDomainGraph: (graph) => {
-    set({ domainGraph: graph });
+    const localDomainGraph = get().localDomainGraph === null ? graph : get().localDomainGraph;
+    set({ domainGraph: graph, localDomainGraph });
   },
 
   setIsKnowledgeGraph: (value) => {
