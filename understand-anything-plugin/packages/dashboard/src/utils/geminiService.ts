@@ -192,7 +192,7 @@ ${optimizedFiles.map(f => `--- FILE: ${f.path} ---\n${f.content}`).join("\n\n")}
       messages: [
         { role: "user", content: prompt }
       ],
-      max_tokens: 4000,
+      max_tokens: 2000,
       response_format: { type: "json_object" }
     })
   });
