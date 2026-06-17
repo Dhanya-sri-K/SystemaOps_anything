@@ -181,7 +181,7 @@ ${optimizedFiles.map(f => `--- FILE: ${f.path} ---\n${f.content}`).join("\n\n")}
 
   let responseText = "";
 
-  if (apiKey.startsWith("AIzaSy")) {
+  if (apiKey.startsWith("AIzaSy") || apiKey.startsWith("AQ.")) {
     // Direct Google Gemini API (Free Tier)
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
       method: "POST",
@@ -280,7 +280,7 @@ ${optimizedFiles.map(f => `--- FILE: ${f.path} ---\n${f.content}`).join("\n\n")}
 
   let responseText = "";
 
-  if (apiKey.startsWith("AIzaSy")) {
+  if (apiKey.startsWith("AIzaSy") || apiKey.startsWith("AQ.")) {
     // Direct Google Gemini API (Free Tier)
     const contents = [
       {
