@@ -179,58 +179,32 @@ Here are the codebase files:
 ${optimizedFiles.map(f => `--- FILE: ${f.path} ---\n${f.content}`).join("\n\n")}
 `;
 
-  let responseText = "";
+  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": "http://localhost:5173",
+      "X-Title": "Understand Anything"
+    },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "user", content: prompt }
+      ],
+      max_tokens: 4000,
+      response_format: { type: "json_object" }
+    })
+  });
 
-  if (apiKey.startsWith("AIzaSy") || apiKey.startsWith("AQ.")) {
-    // Direct Google Gemini API (Free Tier)
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        contents: [
-          { parts: [{ text: prompt }] }
-        ],
-        generationConfig: {
-          responseMimeType: "application/json",
-          maxOutputTokens: 2000
-        }
-      })
-    });
-    const data = await res.json();
-    if (data.error) {
-      throw new Error(data.error.message || "Failed to generate project tour from Google Gemini API.");
-    }
-    responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  } else {
-    // OpenRouter API (Paid / Free Credits)
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "http://localhost:5173",
-        "X-Title": "Understand Anything"
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "user", content: prompt }
-        ],
-        max_tokens: 2000,
-        response_format: { type: "json_object" }
-      })
-    });
-    const data = await res.json();
-    if (data.error) {
-      throw new Error(data.error.message || "Failed to generate project tour from OpenRouter.");
-    }
-    responseText = data.choices?.[0]?.message?.content;
+  const data = await res.json();
+  if (data.error) {
+    throw new Error(data.error.message || "Failed to generate project tour from OpenRouter.");
   }
 
+  const responseText = data.choices?.[0]?.message?.content;
   if (!responseText) {
-    throw new Error("Empty response from AI service.");
+    throw new Error("Empty response from OpenRouter.");
   }
 
   try {
@@ -244,10 +218,10 @@ ${optimizedFiles.map(f => `--- FILE: ${f.path} ---\n${f.content}`).join("\n\n")}
     if (parsed.tour && Array.isArray(parsed.tour)) {
       return parsed.tour;
     }
-    throw new Error("AI JSON response does not contain a valid tour steps array.");
+    throw new Error("OpenRouter JSON response does not contain a valid tour steps array.");
   } catch (err) {
-    console.error("Failed to parse AI response:", responseText, err);
-    throw new Error("Failed to generate project tour from AI API.");
+    console.error("Failed to parse OpenRouter response:", responseText, err);
+    throw new Error("Failed to generate project tour from OpenRouter API.");
   }
 }
 
@@ -278,100 +252,53 @@ Here is the codebase files context:
 ${optimizedFiles.map(f => `--- FILE: ${f.path} ---\n${f.content}`).join("\n\n")}
 `;
 
-  let responseText = "";
-
-  if (apiKey.startsWith("AIzaSy") || apiKey.startsWith("AQ.")) {
-    // Direct Google Gemini API (Free Tier)
-    const contents = [
-      {
-        role: "user",
-        parts: [{ text: "First, acknowledge that you have read the codebase and are ready to help." }]
-      },
-      {
-        role: "model",
-        parts: [{ text: "Hello! I have read the entire codebase and am ready to answer any questions you have about its architecture, components, features, or data flow. Ask me anything!" }]
-      },
-      ...history.map(msg => ({
-        role: msg.role === "model" ? "model" : "user",
-        parts: [{ text: msg.parts }]
-      })),
-      {
-        role: "user",
-        parts: [{ text: question }]
-      }
-    ];
-
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        contents,
-        systemInstruction: {
-          parts: [{ text: codebaseContext }]
-        },
-        generationConfig: {
-          maxOutputTokens: 2000
-        }
-      })
-    });
-
-    const data = await res.json();
-    if (data.error) {
-      throw new Error(data.error.message || "Failed to query Google Gemini API.");
-    }
-    responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  } else {
-    // OpenRouter API (Paid / Free Credits)
-    const formattedHistory = [
-      {
-        role: "system",
-        content: codebaseContext
-      },
-      {
-        role: "user",
-        content: "First, acknowledge that you have read the codebase and are ready to help."
-      },
-      {
-        role: "assistant",
-        content: "Hello! I have read the entire codebase and am ready to answer any questions you have about its architecture, components, features, or data flow. Ask me anything!"
-      },
-      ...history.map(msg => ({
-        role: msg.role === "model" ? "assistant" : "user",
-        content: msg.parts
-      }))
-    ];
-
-    formattedHistory.push({
+  const formattedHistory = [
+    {
+      role: "system",
+      content: codebaseContext
+    },
+    {
       role: "user",
-      content: question
-    });
+      content: "First, acknowledge that you have read the codebase and are ready to help."
+    },
+    {
+      role: "assistant",
+      content: "Hello! I have read the entire codebase and am ready to answer any questions you have about its architecture, components, features, or data flow. Ask me anything!"
+    },
+    ...history.map(msg => ({
+      role: msg.role === "model" ? "assistant" : "user",
+      content: msg.parts
+    }))
+  ];
 
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "http://localhost:5173",
-        "X-Title": "Understand Anything"
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: formattedHistory,
-        max_tokens: 2000
-      })
-    });
+  formattedHistory.push({
+    role: "user",
+    content: question
+  });
 
-    const data = await res.json();
-    if (data.error) {
-      throw new Error(data.error.message || "Failed to query OpenRouter chatbot.");
-    }
-    responseText = data.choices?.[0]?.message?.content;
+  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": "http://localhost:5173",
+      "X-Title": "Understand Anything"
+    },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      messages: formattedHistory,
+      max_tokens: 2000
+    })
+  });
+
+  const data = await res.json();
+  if (data.error) {
+    throw new Error(data.error.message || "Failed to query OpenRouter chatbot.");
   }
 
+  const responseText = data.choices?.[0]?.message?.content;
   if (!responseText) {
-    throw new Error("Empty response from AI service.");
+    throw new Error("Empty response from OpenRouter chatbot.");
   }
 
   return responseText;
