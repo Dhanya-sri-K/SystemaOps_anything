@@ -147,7 +147,7 @@ export async function generateProjectTour(
   }
 
   // Optimize files to avoid token limits
-  const optimizedFiles = optimizeCodebaseContext(codebaseFiles, 80000);
+  const optimizedFiles = optimizeCodebaseContext(codebaseFiles, 40000);
 
   const prompt = `
 You are a senior software architect. Analyze the following codebase files and generate a detailed 10-step guided tour of this project.
@@ -241,7 +241,7 @@ export async function queryChatbot(
   }
 
   // Optimize files to avoid token limits (keep under free account limit)
-  const optimizedFiles = optimizeCodebaseContext(codebaseFiles, 70000);
+  const optimizedFiles = optimizeCodebaseContext(codebaseFiles, 35000);
 
   const codebaseContext = `
 You are an expert software developer and architect who has read the entire codebase for this project.
