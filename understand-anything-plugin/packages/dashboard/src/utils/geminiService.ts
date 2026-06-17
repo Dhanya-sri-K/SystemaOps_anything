@@ -192,7 +192,7 @@ ${optimizedFiles.map(f => `--- FILE: ${f.path} ---\n${f.content}`).join("\n\n")}
       messages: [
         { role: "user", content: prompt }
       ],
-      max_tokens: 4000,
+      max_tokens: 1500,
       response_format: { type: "json_object" }
     })
   });
@@ -287,7 +287,7 @@ ${optimizedFiles.map(f => `--- FILE: ${f.path} ---\n${f.content}`).join("\n\n")}
     body: JSON.stringify({
       model: "google/gemini-2.5-flash",
       messages: formattedHistory,
-      max_tokens: 2000
+      max_tokens: 1500
     })
   });
 
